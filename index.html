@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>件數核對單 - 雙階段簽收系統 (已串接版)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 10px;
+            color: #333;
+            font-size: 13px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .header {
+            border-bottom: 2px solid #ef4444;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: #dc2626;
+            margin: 0;
+            font-size: 20px;
+        }
+        .info-grid {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        /* 三欄式並排佈局 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .column-box {
+            background-color: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        th {
+            font-weight: bold;
+            color: #4b5563;
+        }
+        
+        .column-title {
+            font-size: 14px;
+            font-weight: bold;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .blue-title { background-color: #e0f2fe; color: #0369a1; }
+        .green-title { background-color: #dcfce7; color: #15803d; }
+        .amber-title { background-color: #fef3c7; color: #b45309; }
+
+        .qty-input {
+            width: 50px;
+            padding: 4px;
+            font-size: 13px;
+            text-align: center;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+        .qty-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        /* 雙簽名欄位區塊設計 */
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 兩欄並排，左司機、右分店 */
+            gap: 20px;
+            border-top: 2px solid #e5e7eb;
+            padding-top: 15px;
+            margin-top: 10px;
+        }
+        .signature-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .signature-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .signature-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .canvas-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        canvas {
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            background: #fff;
+            touch-action: none;
+        }
+        .btn-clear {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            border: none;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn {
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        .btn-blue { background-color: #2563eb; }
+        .btn-blue:hover { background-color: #1d4ed8; }
+        .btn-green { background-color: #16a34a; }
+        .btn-green:hover { background-color: #15803d; }
+
+        @media (max-width: 900px) {
+            .main-grid, .bottom-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #2563eb; font-weight: normal;">( 載入資料中... )</span></h1>
+            <div id="headerInfo" class="info-grid">
+                <div><strong>單號：</strong><span>GUO005</span></div>
+                <div><strong>日期：</strong>2026/07/12</div>
+                <div><strong>到貨時間：</strong>--:--</div>
+                <div><strong>製表人員：</strong>連亞軒</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="column-box">
+                <div class="column-title blue-title">1. 溫層與常態出貨項目</div>
+                <table>
+                    <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
+                    <tbody>
+                        <tr><td>冷凍件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷凍PE桶</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷凍大物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷凍港點</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷凍蛋糕</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冰淇淋</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷藏件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷藏小物箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷藏蛋糕</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>常溫件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>常溫大物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>轉運原件</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>轉運物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>文件袋/盒</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>衣服籃</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>地墊</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr style="font-weight: bold; background: #e0f2fe;"><td>出貨總件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="column-box">
+                <div class="column-title green-title">2. 本次出貨 (物流容器)</div>
+                <table>
+                    <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
+                    <tbody>
+                        <tr><td>大物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>小物箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>大PE桶</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>小PE桶</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>籠車</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>蛋糕箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>蛋糕蓋</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>生魚片盒</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>香蕉籃</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>原料件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="column-box">
+                <div class="column-title amber-title">3. 本次回收 (物流容器)</div>
+                <table>
+                    <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
+                    <tbody>
+                        <tr><td>大物流箱 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>小物箱 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>大PE桶 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>小PE桶 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>籠車 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>蛋糕箱 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>蛋糕蓋 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>生魚片盒 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>香蕉籃 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>原件 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>文件袋/盒 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>衣服籃 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>地墊 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bottom-section">
+            <div class="signature-card" id="driverCard">
+                <div class="signature-header">
+                    <span style="color: #2563eb;">第一階段：司機確認點收</span>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="driverCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
+                    <button id="clearDriverBtn" class="btn-clear">清除</button>
+                </div>
+                <button id="lockStage1Btn" class="btn btn-blue">完成第一階段點交並鎖定</button>
+            </div>
+
+            <div class="signature-card disabled" id="storeCard">
+                <div class="signature-header">
+                    <span style="color: #16a34a;">第二階段：分店人員簽收</span>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="storeCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
+                    <button id="clearStoreBtn" class="btn-clear">清除</button>
+                </div>
+                <button id="lockStage2Btn" class="btn btn-green">確認核對並完成簽收（正式鎖檔）</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== [⚠️ 請在這裡輸入您的 GAS 網址] ====================
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyPoWgsKk9L0Rs6fZ-rcRo698pQYkpuIkBJ1uDuysSI-1w8Pn6cEKoNE2DHAGEH6w_1/exec";
+        const CURRENT_ORDER_ID = "GUO005"; // 目前處理的單號
+        // =====================================================================
+
+        // 1. 初始化兩組手寫簽名板
+        function setupCanvas(canvasId, clearBtnId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            }
+            function startDraw(e) { isDrawing = true; draw(e); }
+            function endDraw() { isDrawing = false; ctx.beginPath(); }
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('touchstart', startDraw);
+            canvas.addEventListener('touchend', endDraw);
+            canvas.addEventListener('touchmove', draw);
+
+            document.getElementById(clearBtnId).addEventListener('click', () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+            return { canvas, ctx };
+        }
+
+        const driverSign = setupCanvas('driverCanvas', 'clearDriverBtn');
+        const storeSign = setupCanvas('storeCanvas', 'clearStoreBtn');
+
+        // 2. 頁面開啟時：自動向 Google 試算表請求載入資料
+        window.addEventListener('DOMContentLoaded', () => {
+            if (GAS_API_URL.includes("請將部署完獲得")) {
+                document.getElementById('flowStatus').innerText = "( 未設定 GAS_API_URL 網址 )";
+                return;
+            }
+
+            fetch(`${GAS_API_URL}?action=get_order&order_id=${CURRENT_ORDER_ID}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data.order) {
+                    // 更新表頭資訊
+                    document.getElementById('headerInfo').innerHTML = `
+                        <div><strong>單號：</strong><span>${data.order.order_id}</span></div>
+                        <div><strong>日期：</strong>${data.order.date}</div>
+                        <div><strong>到貨時間：</strong>${data.order.arrival_time}</div>
+                        <div><strong>製表人員：</strong>${data.order.creator}</div>
+                    `;
+                    
+                    // 將試算表中的預計數量填入網頁對應項目
+                    data.items.forEach(item => {
+                        const rows = document.querySelectorAll('table tbody tr');
+                        rows.forEach(row => {
+                            const itemNameCell = row.cells[0];
+                            if(itemNameCell && itemNameCell.innerText === item.name) {
+                                row.cells[1].innerText = item.expected_qty; // 更新預計數量
+                                row.cells[2].querySelector('.qty-input').value = item.expected_qty; // 預設實收 = 預計
+                            }
+                        });
+                    });
+                    
+                    document.getElementById('flowStatus').innerText = "( 第一階段：司機點交中 )";
+                    console.log("試算表資料載入成功！");
+                }
+            })
+            .catch(err => {
+                console.error("載入試算表資料失敗:", err);
+                document.getElementById('flowStatus').innerText = "( 第一階段：司機點交中 - 離線模式 )";
+            });
+        });
+
+        // 3. 第一階段鎖定 (司機確認點收)
+        document.getElementById('lockStage1Btn').addEventListener('click', () => {
+            if (confirm("第一階段鎖定：確定數量無誤且司機已簽名？\n確認後「實收數量」與「司機簽名」將無法再修改，並會開啟第二階段。")) {
+                // 鎖定所有輸入框
+                document.querySelectorAll('.qty-input').forEach(input => {
+                    input.disabled = true;
+                    input.style.backgroundColor = '#f3f4f6';
+                });
+                
+                // 鎖定第一階段簽名區與按鈕
+                driverSign.canvas.style.pointerEvents = 'none';
+                driverSign.canvas.style.backgroundColor = '#e5e7eb';
+                document.getElementById('clearDriverBtn').style.display = 'none';
+                document.getElementById('lockStage1Btn').disabled = true;
+                document.getElementById('lockStage1Btn').style.backgroundColor = '#9ca3af';
+                document.getElementById('lockStage1Btn').innerText = '司機已點交確認(已鎖定)';
+
+                // 開啟第二階段
+                document.getElementById('storeCard').classList.remove('disabled');
+                document.getElementById('flowStatus').innerText = '( 第二階段：分店核對簽收中 )';
+                document.getElementById('flowStatus').style.color = '#16a34a';
+
+                alert("第一階段點交成功！請將平板交給分店人員進行第二階段簽收。");
+            }
+        });
+
+        // 4. 第二階段正式鎖檔 (分店簽收並同步寫入試算表)
+        document.getElementById('lockStage2Btn').addEventListener('click', () => {
+            if (confirm("第二階段鎖檔：確認完成分店簽收？\n此操作將永久鎖定本單據，並同步傳輸資料至雲端存檔。")) {
+                // 鎖定第二階段簽名區與按鈕
+                storeSign.canvas.style.pointerEvents = 'none';
+                storeSign.canvas.style.backgroundColor = '#e5e7eb';
+                document.getElementById('clearStoreBtn').style.display = 'none';
+                document.getElementById('lockStage2Btn').disabled = true;
+                document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
+                document.getElementById('lockStage2Btn').innerText = '資料上傳同步中...';
+
+                document.getElementById('flowStatus').innerText = '( 正在將配送單同步至雲端... )';
+                document.getElementById('flowStatus').style.color = '#6b7280';
+
+                // 呼叫上傳資料庫函數
+                uploadDataToGoogleSheet();
+            }
+        });
+
+        // 5. 上傳資料到 Google 試算表
+        function uploadDataToGoogleSheet() {
+            const now = new Date();
+            const arrivalTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            // 收集網頁上最終修改後的項目與實際數量
+            const itemsData = [];
+            const rows = document.querySelectorAll('table tbody tr');
+            rows.forEach(row => {
+                const nameCell = row.cells[0];
+                const qtyInput = row.querySelector('.qty-input');
+                if (nameCell && qtyInput && !row.classList.contains('category-header')) {
+                    itemsData.push({
+                        name: nameCell.innerText,
+                        actual_qty: parseInt(qtyInput.value) || 0
+                    });
+                }
+            });
+
+            // 準備上傳打包資料
+            const payload = {
+                action: "submit_delivery",
+                order_id: CURRENT_ORDER_ID,
+                arrival_time: arrivalTimeStr,
+                driver_sign: driverSign.canvas.toDataURL(), // 司機簽名 Base64
+                store_sign: storeSign.canvas.toDataURL(),   // 分店簽名 Base64
+                items: itemsData
+            };
+
+            // 如果沒有設定 API URL 則只在本地鎖死
+            if (GAS_API_URL.includes("請將部署完獲得")) {
+                alert("未設定 GAS 網址，已完成本地鎖定（未同步至雲端）。");
+                document.getElementById('lockStage2Btn').innerText = "配送完成(本地已鎖檔)";
+                return;
+            }
+
+            // 發送 POST 寫入
+            fetch(GAS_API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result.status === "success") {
+                    alert("🎉 資料已成功同步至 Google 雲端試算表！本單據已正式封存。");
+                    document.getElementById('lockStage2Btn').innerText = "配送完成(數據已同步存檔)";
+                    document.getElementById('flowStatus').innerText = '( 配送流程已結束 - 唯讀歸檔 )';
+                } else {
+                    alert("存檔失敗：" + result.message);
+                    document.getElementById('lockStage2Btn').disabled = false;
+                    document.getElementById('lockStage2Btn').style.backgroundColor = '#16a34a';
+                    document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
+                }
+            })
+            .catch(err => {
+                console.error("同步失敗:", err);
+                alert("網路連線異常，但本地數據已鎖定，請於收訊良好處重新整理頁面。");
+                document.getElementById('lockStage2Btn').innerText = "配送完成(本地已鎖檔，待同步)";
+            });
+        }
+    </script>
+</body>
+</html>
