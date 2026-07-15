@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>件數核對單 - 雙階段簽收系統</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -95,7 +98,7 @@
         /* 雙簽名欄位區塊設計 */
         .bottom-section {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 兩欄並排，左司機、右分店 */
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
             border-top: 2px solid #e5e7eb;
             padding-top: 15px;
@@ -166,7 +169,6 @@
 <body>
 
     <div class="container">
-        <!-- 頂部資訊 -->
         <div class="header">
             <h1>件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 載入資料中... )</span></h1>
             <div id="headerInfo" class="info-grid">
@@ -177,9 +179,7 @@
             </div>
         </div>
 
-        <!-- 橫向三欄式大網格 -->
         <div class="main-grid">
-            <!-- 欄 1：溫層與常態出貨項目 -->
             <div class="column-box">
                 <div class="column-title blue-title">1. 溫層與常態出貨項目</div>
                 <table>
@@ -206,7 +206,6 @@
                 </table>
             </div>
 
-            <!-- 欄 2：本次出貨 (物流容器) -->
             <div class="column-box">
                 <div class="column-title green-title">2. 本次出貨 (物流容器)</div>
                 <table>
@@ -226,7 +225,6 @@
                 </table>
             </div>
 
-            <!-- 欄 3：本次回收 (物流容器) -->
             <div class="column-box">
                 <div class="column-title amber-title">3. 本次回收 (物流容器)</div>
                 <table>
@@ -250,9 +248,7 @@
             </div>
         </div>
 
-        <!-- 底部雙階段簽章區 -->
         <div class="bottom-section">
-            <!-- 階段一：司機確認 -->
             <div class="signature-card" id="driverCard">
                 <div class="signature-header">
                     <span style="color: #2563eb;">第一階段：司機確認點收</span>
@@ -264,7 +260,6 @@
                 <button id="lockStage1Btn" class="btn btn-blue">完成第一階段點交並鎖定</button>
             </div>
 
-            <!-- 階段二：分店簽收 -->
             <div class="signature-card disabled" id="storeCard">
                 <div class="signature-header">
                     <span style="color: #16a34a;">第二階段：分店人員簽收</span>
@@ -278,17 +273,15 @@
         </div>
     </div>
 
-    <!-- 💡 JavaScript 控制與試算表串接區 -->
     <script>
-        // ==================== [⚠️ 請在這裡貼上您的 GAS 網址] ====================
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwRUxzUOUFgip6NQ6mi3NQfT9PWiAyK4l3Waa-Z5Y4WIk3SK2u3clIgp-kPjwqVN5_0/exec"; 
-        // =====================================================================
+        // ==================== [⚠️ 請確認您的 GAS 部署網址正確] ====================
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwouLbQE43GFoXp9DpZjIfZV2dcdXcLmcIG2ReCbYkQPc68HzuNijCQdeZuA5t_7G_W/exec"; 
+        // ============================================================================
 
-        // 自動從網址解析單號，預設為 GUO005
         const urlParams = new URLSearchParams(window.location.search);
         const CURRENT_ORDER_ID = urlParams.get('order_id') || "GUO005";
 
-        // 1. 初始化兩組手寫簽名板
+        // 初始化簽名板
         function setupCanvas(canvasId, clearBtnId) {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext('2d');
@@ -329,20 +322,14 @@
         const driverSign = setupCanvas('driverCanvas', 'clearDriverBtn');
         const storeSign = setupCanvas('storeCanvas', 'clearStoreBtn');
 
-        // 2. 頁面開啟時：自動向 Google 試算表請求載入資料
-        window.addEventListener('DOMContentLoaded', () => {
+        // 載入試算表資料的函數
+        function loadOrderData() {
             document.getElementById('orderIdText').innerText = CURRENT_ORDER_ID;
-
-            if (GAS_API_URL.includes("貼上您在步驟1")) {
-                document.getElementById('flowStatus').innerText = "( 未設定 GAS_API_URL 網址 )";
-                return;
-            }
 
             fetch(`${GAS_API_URL}?action=get_order&order_id=${CURRENT_ORDER_ID}`)
             .then(response => response.json())
             .then(data => {
                 if(data.order) {
-                    // 更新表頭資訊
                     document.getElementById('headerInfo').innerHTML = `
                         <div><strong>單號：</strong><span>${data.order.order_id}</span></div>
                         <div><strong>日期：</strong>${data.order.date}</div>
@@ -350,15 +337,14 @@
                         <div><strong>製表人員：</strong>${data.order.creator}</div>
                     `;
                     
-                    // 修正比對邏輯：只對比項目名稱
                     if(data.items && data.items.length > 0) {
                         data.items.forEach(item => {
                             const rows = document.querySelectorAll('table tbody tr');
                             rows.forEach(row => {
                                 const itemNameCell = row.cells[0];
                                 if(itemNameCell && itemNameCell.innerText.trim() === item.name.trim()) {
-                                    row.cells[1].innerText = item.expected_qty; // 更新預計數量
-                                    row.cells[2].querySelector('.qty-input').value = item.expected_qty; // 預設實收 = 預計
+                                    row.cells[1].innerText = item.expected_qty;
+                                    row.cells[2].querySelector('.qty-input').value = item.expected_qty;
                                 }
                             });
                         });
@@ -366,20 +352,22 @@
                     
                     document.getElementById('flowStatus').innerText = "( 第一階段：司機點交中 )";
                     document.getElementById('flowStatus').style.color = '#2563eb';
-                    console.log("試算表資料載入成功！");
                 } else {
                     document.getElementById('flowStatus').innerText = "( 找不到該單號資料 )";
                 }
             })
             .catch(err => {
-                console.error("載入試算表資料失敗:", err);
+                console.error("載入失敗:", err);
                 document.getElementById('flowStatus').innerText = `( 載入失敗: ${err.message} )`;
             });
-        });
+        }
 
-        // 3. 第一階段鎖定 (司機確認點收)
+        // 頁面加載完成後自動執行載入
+        window.addEventListener('DOMContentLoaded', loadOrderData);
+
+        // 第一階段鎖定事件監聽
         document.getElementById('lockStage1Btn').addEventListener('click', () => {
-            if (confirm("第一階段鎖定：確定數量無誤且司機已簽名？\n確認後「實收數量」與「司機簽名」將無法再修改，並會開啟第二階段。")) {
+            if (confirm("第一階段鎖定：確定數量無誤且司機已簽名？")) {
                 document.querySelectorAll('.qty-input').forEach(input => {
                     input.disabled = true;
                     input.style.backgroundColor = '#f3f4f6';
@@ -388,9 +376,7 @@
                 driverSign.canvas.style.pointerEvents = 'none';
                 driverSign.canvas.style.backgroundColor = '#e5e7eb';
                 document.getElementById('clearDriverBtn').style.display = 'none';
-                document.getElementById('lockStage1Btn').disabled = true;
-                document.getElementById('lockStage1Btn').style.backgroundColor = '#9ca3af';
-                document.getElementById('lockStage1Btn').innerText = '司機已點交確認(已鎖定)';
+                document.getElementById('lockStage1Btn').style.display = 'none';
 
                 document.getElementById('storeCard').classList.remove('disabled');
                 document.getElementById('flowStatus').innerText = '( 第二階段：分店核對簽收中 )';
@@ -400,28 +386,49 @@
             }
         });
 
-        // 4. 第二階段正式鎖檔 (分店簽收並同步寫入試算表)
-        document.getElementById('lockStage2Btn').addEventListener('click', () => {
-            if (confirm("第二階段鎖檔：確認完成分店簽收？\n此操作將永久鎖定本單據，並同步傳輸資料至雲端存檔。")) {
-                storeSign.canvas.style.pointerEvents = 'none';
-                storeSign.canvas.style.backgroundColor = '#e5e7eb';
-                document.getElementById('clearStoreBtn').style.display = 'none';
-                document.getElementById('lockStage2Btn').disabled = true;
-                document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
-                document.getElementById('lockStage2Btn').innerText = '資料上傳同步中...';
+        // 輔助：傳送 Payload 給 GAS 的通用模組
+        function sendPayload(screenshot, arrivalTimeStr, itemsData) {
+            const payload = {
+                action: "submit_delivery",
+                order_id: CURRENT_ORDER_ID,
+                arrival_time: arrivalTimeStr,
+                driver_sign: driverSign.canvas.toDataURL(), 
+                store_sign: storeSign.canvas.toDataURL(),   
+                screenshot: screenshot, 
+                items: itemsData
+            };
 
-                document.getElementById('flowStatus').innerText = '( 正在將配送單同步至雲端... )';
-                document.getElementById('flowStatus').style.color = '#6b7280';
+            fetch(GAS_API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result.status === "success") {
+                    alert("🎉 簽收完成！數據與「現場畫面截圖」已自動儲存至 Google 雲端硬碟。");
+                    document.getElementById('lockStage2Btn').innerText = "配送完成(畫面與數據已自動封存)";
+                    document.getElementById('flowStatus').innerText = '( 配送流程已結束 - 唯讀歸檔 )';
+                    document.getElementById('flowStatus').style.color = '#6b7280';
+                    document.getElementById('lockStage2Btn').disabled = true;
+                    document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
+                } else {
+                    alert("存檔失敗：" + result.message);
+                    restoreButtons();
+                }
+            })
+            .catch(err => {
+                console.error("同步失敗:", err);
+                alert("網路連線異常，但本地數據已鎖定。");
+                restoreButtons();
+            });
+        }
 
-                uploadDataToGoogleSheet();
-            }
-        });
-
-        // 5. 上傳資料到 Google 試算表
+        // 上傳與截圖邏輯
         function uploadDataToGoogleSheet() {
             const now = new Date();
             const arrivalTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+            // 1. 收集數據
             const itemsData = [];
             const rows = document.querySelectorAll('table tbody tr');
             rows.forEach(row => {
@@ -435,38 +442,56 @@
                 }
             });
 
-            const payload = {
-                action: "submit_delivery",
-                order_id: CURRENT_ORDER_ID,
-                arrival_time: arrivalTimeStr,
-                driver_sign: driverSign.canvas.toDataURL(), 
-                store_sign: storeSign.canvas.toDataURL(),   
-                items: itemsData
-            };
+            // 2. 暫時隱藏控制按鈕
+            document.getElementById('clearDriverBtn').style.display = 'none';
+            document.getElementById('clearStoreBtn').style.display = 'none';
+            document.getElementById('lockStage1Btn').style.display = 'none';
+            document.getElementById('lockStage2Btn').style.display = 'none';
 
-            fetch(GAS_API_URL, {
-                method: "POST",
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(result => {
-                if(result.status === "success") {
-                    alert("🎉 資料已成功同步至 Google 雲端試算表！本單據已正式封存。");
-                    document.getElementById('lockStage2Btn').innerText = "配送完成(數據已同步存檔)";
-                    document.getElementById('flowStatus').innerText = '( 配送流程已結束 - 唯讀歸檔 )';
-                    document.getElementById('flowStatus').style.color = '#6b7280';
-                } else {
-                    alert("存檔失敗：" + result.message);
-                    document.getElementById('lockStage2Btn').disabled = false;
-                    document.getElementById('lockStage2Btn').style.backgroundColor = '#16a34a';
-                    document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
-                }
-            })
-            .catch(err => {
-                console.error("同步失敗:", err);
-                alert("網路連線異常，但本地數據已鎖定，請於收訊良好處重新整理頁面。");
-                document.getElementById('lockStage2Btn').innerText = "配送完成(本地已鎖檔，待同步)";
+            // 3. 檢查截圖套件是否存在
+            if (typeof html2canvas === 'undefined') {
+                console.warn("html2canvas 未能及時載入，跳過截圖直接上傳資料");
+                sendPayload(null, arrivalTimeStr, itemsData);
+                return;
+            }
+
+            // 4. 正常執行截圖
+            html2canvas(document.body, {
+                scale: 1.5,
+                useCORS: true
+            }).then(canvas => {
+                const screenshotBase64 = canvas.toDataURL('image/png');
+                sendPayload(screenshotBase64, arrivalTimeStr, itemsData);
+            }).catch(err => {
+                console.error("截圖失敗:", err);
+                sendPayload(null, arrivalTimeStr, itemsData);
             });
+        }
+
+        // 第二階段正式鎖檔按鈕點擊事件
+        document.getElementById('lockStage2Btn').addEventListener('click', () => {
+            if (confirm("第二階段鎖檔：確認完成分店簽收？\n此操作將永久鎖定本單據，並自動截圖存檔上傳至雲端。")) {
+                storeSign.canvas.style.pointerEvents = 'none';
+                storeSign.canvas.style.backgroundColor = '#e5e7eb';
+                document.getElementById('clearStoreBtn').style.display = 'none';
+                document.getElementById('lockStage2Btn').disabled = true;
+                document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
+                document.getElementById('lockStage2Btn').innerText = '畫面截圖與上傳同步中...';
+
+                document.getElementById('flowStatus').innerText = '( 正在將配送單同步至雲端... )';
+                document.getElementById('flowStatus').style.color = '#6b7280';
+
+                uploadDataToGoogleSheet();
+            }
+        });
+
+        function restoreButtons() {
+            document.getElementById('clearDriverBtn').style.display = 'inline-block';
+            document.getElementById('clearStoreBtn').style.display = 'inline-block';
+            document.getElementById('lockStage2Btn').style.display = 'block';
+            document.getElementById('lockStage2Btn').disabled = false;
+            document.getElementById('lockStage2Btn').style.backgroundColor = '#16a34a';
+            document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
         }
     </script>
 </body>
