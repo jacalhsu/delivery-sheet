@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>件數核對單 - 雙階段簽收系統 (已串接版)</title>
+    <title>件數核對單 - 雙階段簽收系統</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -166,17 +166,20 @@
 <body>
 
     <div class="container">
+        <!-- 頂部資訊 -->
         <div class="header">
-            <h1>件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #2563eb; font-weight: normal;">( 載入資料中... )</span></h1>
+            <h1>件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 載入資料中... )</span></h1>
             <div id="headerInfo" class="info-grid">
-                <div><strong>單號：</strong><span>GUO005</span></div>
-                <div><strong>日期：</strong>2026/07/12</div>
+                <div><strong>單號：</strong><span id="orderIdText">未提供</span></div>
+                <div><strong>日期：</strong>--/--/--</div>
                 <div><strong>到貨時間：</strong>--:--</div>
-                <div><strong>製表人員：</strong>連亞軒</div>
+                <div><strong>製表人員：</strong>--</div>
             </div>
         </div>
 
+        <!-- 橫向三欄式大網格 -->
         <div class="main-grid">
+            <!-- 欄 1：溫層與常態出貨項目 -->
             <div class="column-box">
                 <div class="column-title blue-title">1. 溫層與常態出貨項目</div>
                 <table>
@@ -203,6 +206,7 @@
                 </table>
             </div>
 
+            <!-- 欄 2：本次出貨 (物流容器) -->
             <div class="column-box">
                 <div class="column-title green-title">2. 本次出貨 (物流容器)</div>
                 <table>
@@ -222,6 +226,7 @@
                 </table>
             </div>
 
+            <!-- 欄 3：本次回收 (物流容器) -->
             <div class="column-box">
                 <div class="column-title amber-title">3. 本次回收 (物流容器)</div>
                 <table>
@@ -245,7 +250,9 @@
             </div>
         </div>
 
+        <!-- 底部雙階段簽章區 -->
         <div class="bottom-section">
+            <!-- 階段一：司機確認 -->
             <div class="signature-card" id="driverCard">
                 <div class="signature-header">
                     <span style="color: #2563eb;">第一階段：司機確認點收</span>
@@ -257,6 +264,7 @@
                 <button id="lockStage1Btn" class="btn btn-blue">完成第一階段點交並鎖定</button>
             </div>
 
+            <!-- 階段二：分店簽收 -->
             <div class="signature-card disabled" id="storeCard">
                 <div class="signature-header">
                     <span style="color: #16a34a;">第二階段：分店人員簽收</span>
@@ -270,11 +278,15 @@
         </div>
     </div>
 
+    <!-- 💡 JavaScript 控制與試算表串接區 -->
     <script>
-        // ==================== [⚠️ 請在這裡輸入您的 GAS 網址] ====================
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzO4obkvbAF_ZjRlE-ZfgQLuW9uN0MMPv8kCV2oxs6JVRo1XKCrUgQg8MgdOMbGwseT/exec";
-        const CURRENT_ORDER_ID = "GUO005"; // 目前處理的單號
+        // ==================== [⚠️ 請在這裡貼上您的 GAS 網址] ====================
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzO4obkvbAF_ZjRlE-ZfgQLuW9uN0MMPv8kCV2oxs6JVRo1XKCrUgQg8MgdOMbGwseT/exec"; 
         // =====================================================================
+
+        // 自動從網址解析單號，預設為 GUO005
+        const urlParams = new URLSearchParams(window.location.search);
+        const CURRENT_ORDER_ID = urlParams.get('order_id') || "GUO005";
 
         // 1. 初始化兩組手寫簽名板
         function setupCanvas(canvasId, clearBtnId) {
@@ -319,7 +331,9 @@
 
         // 2. 頁面開啟時：自動向 Google 試算表請求載入資料
         window.addEventListener('DOMContentLoaded', () => {
-            if (GAS_API_URL.includes("請將部署完獲得")) {
+            document.getElementById('orderIdText').innerText = CURRENT_ORDER_ID;
+
+            if (GAS_API_URL.includes("貼上您在步驟1")) {
                 document.getElementById('flowStatus').innerText = "( 未設定 GAS_API_URL 網址 )";
                 return;
             }
@@ -336,38 +350,41 @@
                         <div><strong>製表人員：</strong>${data.order.creator}</div>
                     `;
                     
-                    // 將試算表中的預計數量填入網頁對應項目
-                    data.items.forEach(item => {
-                        const rows = document.querySelectorAll('table tbody tr');
-                        rows.forEach(row => {
-                            const itemNameCell = row.cells[0];
-                            if(itemNameCell && itemNameCell.innerText === item.name) {
-                                row.cells[1].innerText = item.expected_qty; // 更新預計數量
-                                row.cells[2].querySelector('.qty-input').value = item.expected_qty; // 預設實收 = 預計
-                            }
+                    // 修正比對邏輯：只對比項目名稱
+                    if(data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            const rows = document.querySelectorAll('table tbody tr');
+                            rows.forEach(row => {
+                                const itemNameCell = row.cells[0];
+                                if(itemNameCell && itemNameCell.innerText.trim() === item.name.trim()) {
+                                    row.cells[1].innerText = item.expected_qty; // 更新預計數量
+                                    row.cells[2].querySelector('.qty-input').value = item.expected_qty; // 預設實收 = 預計
+                                }
+                            });
                         });
-                    });
+                    }
                     
                     document.getElementById('flowStatus').innerText = "( 第一階段：司機點交中 )";
+                    document.getElementById('flowStatus').style.color = '#2563eb';
                     console.log("試算表資料載入成功！");
+                } else {
+                    document.getElementById('flowStatus').innerText = "( 找不到該單號資料 )";
                 }
             })
             .catch(err => {
                 console.error("載入試算表資料失敗:", err);
-                document.getElementById('flowStatus').innerText = "( 第一階段：司機點交中 - 離線模式 )";
+                document.getElementById('flowStatus').innerText = `( 載入失敗: ${err.message} )`;
             });
         });
 
         // 3. 第一階段鎖定 (司機確認點收)
         document.getElementById('lockStage1Btn').addEventListener('click', () => {
             if (confirm("第一階段鎖定：確定數量無誤且司機已簽名？\n確認後「實收數量」與「司機簽名」將無法再修改，並會開啟第二階段。")) {
-                // 鎖定所有輸入框
                 document.querySelectorAll('.qty-input').forEach(input => {
                     input.disabled = true;
                     input.style.backgroundColor = '#f3f4f6';
                 });
                 
-                // 鎖定第一階段簽名區與按鈕
                 driverSign.canvas.style.pointerEvents = 'none';
                 driverSign.canvas.style.backgroundColor = '#e5e7eb';
                 document.getElementById('clearDriverBtn').style.display = 'none';
@@ -375,7 +392,6 @@
                 document.getElementById('lockStage1Btn').style.backgroundColor = '#9ca3af';
                 document.getElementById('lockStage1Btn').innerText = '司機已點交確認(已鎖定)';
 
-                // 開啟第二階段
                 document.getElementById('storeCard').classList.remove('disabled');
                 document.getElementById('flowStatus').innerText = '( 第二階段：分店核對簽收中 )';
                 document.getElementById('flowStatus').style.color = '#16a34a';
@@ -387,7 +403,6 @@
         // 4. 第二階段正式鎖檔 (分店簽收並同步寫入試算表)
         document.getElementById('lockStage2Btn').addEventListener('click', () => {
             if (confirm("第二階段鎖檔：確認完成分店簽收？\n此操作將永久鎖定本單據，並同步傳輸資料至雲端存檔。")) {
-                // 鎖定第二階段簽名區與按鈕
                 storeSign.canvas.style.pointerEvents = 'none';
                 storeSign.canvas.style.backgroundColor = '#e5e7eb';
                 document.getElementById('clearStoreBtn').style.display = 'none';
@@ -398,7 +413,6 @@
                 document.getElementById('flowStatus').innerText = '( 正在將配送單同步至雲端... )';
                 document.getElementById('flowStatus').style.color = '#6b7280';
 
-                // 呼叫上傳資料庫函數
                 uploadDataToGoogleSheet();
             }
         });
@@ -408,7 +422,6 @@
             const now = new Date();
             const arrivalTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-            // 收集網頁上最終修改後的項目與實際數量
             const itemsData = [];
             const rows = document.querySelectorAll('table tbody tr');
             rows.forEach(row => {
@@ -416,30 +429,21 @@
                 const qtyInput = row.querySelector('.qty-input');
                 if (nameCell && qtyInput && !row.classList.contains('category-header')) {
                     itemsData.push({
-                        name: nameCell.innerText,
+                        name: nameCell.innerText.trim(),
                         actual_qty: parseInt(qtyInput.value) || 0
                     });
                 }
             });
 
-            // 準備上傳打包資料
             const payload = {
                 action: "submit_delivery",
                 order_id: CURRENT_ORDER_ID,
                 arrival_time: arrivalTimeStr,
-                driver_sign: driverSign.canvas.toDataURL(), // 司機簽名 Base64
-                store_sign: storeSign.canvas.toDataURL(),   // 分店簽名 Base64
+                driver_sign: driverSign.canvas.toDataURL(), 
+                store_sign: storeSign.canvas.toDataURL(),   
                 items: itemsData
             };
 
-            // 如果沒有設定 API URL 則只在本地鎖死
-            if (GAS_API_URL.includes("請將部署完獲得")) {
-                alert("未設定 GAS 網址，已完成本地鎖定（未同步至雲端）。");
-                document.getElementById('lockStage2Btn').innerText = "配送完成(本地已鎖檔)";
-                return;
-            }
-
-            // 發送 POST 寫入
             fetch(GAS_API_URL, {
                 method: "POST",
                 body: JSON.stringify(payload)
@@ -450,6 +454,7 @@
                     alert("🎉 資料已成功同步至 Google 雲端試算表！本單據已正式封存。");
                     document.getElementById('lockStage2Btn').innerText = "配送完成(數據已同步存檔)";
                     document.getElementById('flowStatus').innerText = '( 配送流程已結束 - 唯讀歸檔 )';
+                    document.getElementById('flowStatus').style.color = '#6b7280';
                 } else {
                     alert("存檔失敗：" + result.message);
                     document.getElementById('lockStage2Btn').disabled = false;
