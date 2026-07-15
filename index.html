@@ -44,7 +44,6 @@
             color: #555;
         }
 
-        /* 三欄式並排佈局 */
         .main-grid {
             display: grid;
             grid-template-columns: 1.1fr 1fr 1fr;
@@ -95,7 +94,6 @@
             border-color: #3b82f6;
         }
 
-        /* 雙簽名欄位區塊設計 */
         .bottom-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -168,14 +166,14 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" id="captureArea">
         <div class="header">
-            <h1>件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 載入資料中... )</span></h1>
+            <h1>件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 流程進行中 )</span></h1>
             <div id="headerInfo" class="info-grid">
                 <div><strong>單號：</strong><span id="orderIdText">未提供</span></div>
-                <div><strong>日期：</strong>--/--/--</div>
-                <div><strong>到貨時間：</strong>--:--</div>
-                <div><strong>製表人員：</strong>--</div>
+                <div><strong>日期：</strong><span id="orderDate">--/--/--</span></div>
+                <div><strong>實際到貨時間：</strong><span id="arrivalTime">--:--</span></div>
+                <div><strong>製表人員：</strong><span id="creator">物流系統</span></div>
             </div>
         </div>
 
@@ -185,7 +183,7 @@
                 <table>
                     <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
                     <tbody>
-                        <tr><td>冷凍件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr><td>冷凍件數</td><td align="center">5</td><td align="center"><input type="number" class="qty-input" value="5"></td></tr>
                         <tr><td>冷凍PE桶</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
                         <tr><td>冷凍大物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
                         <tr><td>冷凍港點</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
@@ -201,7 +199,7 @@
                         <tr><td>文件袋/盒</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
                         <tr><td>衣服籃</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
                         <tr><td>地墊</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr style="font-weight: bold; background: #e0f2fe;"><td>出貨總件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
+                        <tr style="font-weight: bold; background: #e0f2fe;"><td>出貨總件數</td><td align="center">5</td><td align="center"><input type="number" class="qty-input" value="5"></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -268,16 +266,12 @@
                     <canvas id="storeCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
                     <button id="clearStoreBtn" class="btn-clear">清除</button>
                 </div>
-                <button id="lockStage2Btn" class="btn btn-green">確認核對並完成簽收（正式鎖檔）</button>
+                <button id="lockStage2Btn" class="btn btn-green">確認核對並完成簽收（自動下載簽單）</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ==================== [⚠️ 請確認您的 GAS 部署網址正確] ====================
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwouLbQE43GFoXp9DpZjIfZV2dcdXcLmcIG2ReCbYkQPc68HzuNijCQdeZuA5t_7G_W/exec"; 
-        // ============================================================================
-
         const urlParams = new URLSearchParams(window.location.search);
         const CURRENT_ORDER_ID = urlParams.get('order_id') || "GUO005";
 
@@ -322,50 +316,14 @@
         const driverSign = setupCanvas('driverCanvas', 'clearDriverBtn');
         const storeSign = setupCanvas('storeCanvas', 'clearStoreBtn');
 
-        // 載入試算表資料的函數
-        function loadOrderData() {
+        // 頁面初始化
+        window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('orderIdText').innerText = CURRENT_ORDER_ID;
+            const now = new Date();
+            document.getElementById('orderDate').innerText = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+        });
 
-            fetch(`${GAS_API_URL}?action=get_order&order_id=${CURRENT_ORDER_ID}`)
-            .then(response => response.json())
-            .then(data => {
-                if(data.order) {
-                    document.getElementById('headerInfo').innerHTML = `
-                        <div><strong>單號：</strong><span>${data.order.order_id}</span></div>
-                        <div><strong>日期：</strong>${data.order.date}</div>
-                        <div><strong>到貨時間：</strong>${data.order.arrival_time}</div>
-                        <div><strong>製表人員：</strong>${data.order.creator}</div>
-                    `;
-                    
-                    if(data.items && data.items.length > 0) {
-                        data.items.forEach(item => {
-                            const rows = document.querySelectorAll('table tbody tr');
-                            rows.forEach(row => {
-                                const itemNameCell = row.cells[0];
-                                if(itemNameCell && itemNameCell.innerText.trim() === item.name.trim()) {
-                                    row.cells[1].innerText = item.expected_qty;
-                                    row.cells[2].querySelector('.qty-input').value = item.expected_qty;
-                                }
-                            });
-                        });
-                    }
-                    
-                    document.getElementById('flowStatus').innerText = "( 第一階段：司機點交中 )";
-                    document.getElementById('flowStatus').style.color = '#2563eb';
-                } else {
-                    document.getElementById('flowStatus').innerText = "( 找不到該單號資料 )";
-                }
-            })
-            .catch(err => {
-                console.error("載入失敗:", err);
-                document.getElementById('flowStatus').innerText = `( 載入失敗: ${err.message} )`;
-            });
-        }
-
-        // 頁面加載完成後自動執行載入
-        window.addEventListener('DOMContentLoaded', loadOrderData);
-
-        // 第一階段鎖定事件監聽
+        // 第一階段鎖定
         document.getElementById('lockStage1Btn').addEventListener('click', () => {
             if (confirm("第一階段鎖定：確定數量無誤且司機已簽名？")) {
                 document.querySelectorAll('.qty-input').forEach(input => {
@@ -386,112 +344,71 @@
             }
         });
 
-        // 輔助：傳送 Payload 給 GAS 的通用模組
-        function sendPayload(screenshot, arrivalTimeStr, itemsData) {
-            const payload = {
-                action: "submit_delivery",
-                order_id: CURRENT_ORDER_ID,
-                arrival_time: arrivalTimeStr,
-                driver_sign: driverSign.canvas.toDataURL(), 
-                store_sign: storeSign.canvas.toDataURL(),   
-                screenshot: screenshot, 
-                items: itemsData
-            };
-
-            fetch(GAS_API_URL, {
-                method: "POST",
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(result => {
-                if(result.status === "success") {
-                    alert("🎉 簽收完成！數據與「現場畫面截圖」已自動儲存至 Google 雲端硬碟。");
-                    document.getElementById('lockStage2Btn').innerText = "配送完成(畫面與數據已自動封存)";
-                    document.getElementById('flowStatus').innerText = '( 配送流程已結束 - 唯讀歸檔 )';
-                    document.getElementById('flowStatus').style.color = '#6b7280';
-                    document.getElementById('lockStage2Btn').disabled = true;
-                    document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
-                } else {
-                    alert("存檔失敗：" + result.message);
-                    restoreButtons();
-                }
-            })
-            .catch(err => {
-                console.error("同步失敗:", err);
-                alert("網路連線異常，但本地數據已鎖定。");
-                restoreButtons();
-            });
-        }
-
-        // 上傳與截圖邏輯
-        function uploadDataToGoogleSheet() {
+        // 🌟 純前端截圖並「直接自動下載」為 PNG 圖片，不走任何 Google 後端與 API
+        function generateAndDownloadScreenshot() {
             const now = new Date();
-            const arrivalTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            document.getElementById('arrivalTime').innerText = timeStr;
 
-            // 1. 收集數據
-            const itemsData = [];
-            const rows = document.querySelectorAll('table tbody tr');
-            rows.forEach(row => {
-                const nameCell = row.cells[0];
-                const qtyInput = row.querySelector('.qty-input');
-                if (nameCell && qtyInput && !row.classList.contains('category-header')) {
-                    itemsData.push({
-                        name: nameCell.innerText.trim(),
-                        actual_qty: parseInt(qtyInput.value) || 0
-                    });
-                }
-            });
-
-            // 2. 暫時隱藏控制按鈕
+            // 暫時隱藏清除與送出按鈕，保證輸出的簽章單美觀乾淨
             document.getElementById('clearDriverBtn').style.display = 'none';
             document.getElementById('clearStoreBtn').style.display = 'none';
             document.getElementById('lockStage1Btn').style.display = 'none';
             document.getElementById('lockStage2Btn').style.display = 'none';
 
-            // 3. 檢查截圖套件是否存在
-            if (typeof html2canvas === 'undefined') {
-                console.warn("html2canvas 未能及時載入，跳過截圖直接上傳資料");
-                sendPayload(null, arrivalTimeStr, itemsData);
-                return;
-            }
-
-            // 4. 正常執行截圖
-            html2canvas(document.body, {
-                scale: 1.5,
+            // 執行 html2canvas 截圖
+            html2canvas(document.getElementById('captureArea'), {
+                scale: 1.5, // 提高解析度
                 useCORS: true
             }).then(canvas => {
-                const screenshotBase64 = canvas.toDataURL('image/png');
-                sendPayload(screenshotBase64, arrivalTimeStr, itemsData);
+                const imgData = canvas.toDataURL('image/png');
+                
+                // 建立一個虛擬的 <a> 標籤，點擊觸發瀏覽器下載
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imgData;
+                downloadLink.download = `單號_${CURRENT_ORDER_ID}_簽收確認單.png`;
+                
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+
+                alert("🎉 簽收完成！件數核對單截圖已自動下載至您的設備中。");
+
+                document.getElementById('lockStage2Btn').innerText = "簽章單已自動下載並儲存";
+                document.getElementById('flowStatus').innerText = '( 流程已結束 - 簽收單已完成下載 )';
+                document.getElementById('flowStatus').style.color = '#6b7280';
+                document.getElementById('lockStage2Btn').style.display = 'block';
+                document.getElementById('lockStage2Btn').disabled = true;
+                
             }).catch(err => {
                 console.error("截圖失敗:", err);
-                sendPayload(null, arrivalTimeStr, itemsData);
+                alert("產生簽收截圖失敗！");
+                restoreButtons();
             });
         }
 
-        // 第二階段正式鎖檔按鈕點擊事件
+        // 第二階段正式點收
         document.getElementById('lockStage2Btn').addEventListener('click', () => {
-            if (confirm("第二階段鎖檔：確認完成分店簽收？\n此操作將永久鎖定本單據，並自動截圖存檔上傳至雲端。")) {
+            if (confirm("確認點收數量無誤且完成分店人員簽章？\n系統將會鎖定本表單，並自動將「全螢幕截圖」下載至您的設備。")) {
                 storeSign.canvas.style.pointerEvents = 'none';
                 storeSign.canvas.style.backgroundColor = '#e5e7eb';
                 document.getElementById('clearStoreBtn').style.display = 'none';
                 document.getElementById('lockStage2Btn').disabled = true;
                 document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
-                document.getElementById('lockStage2Btn').innerText = '畫面截圖與上傳同步中...';
+                document.getElementById('lockStage2Btn').innerText = '產生核對單截圖中...';
 
-                document.getElementById('flowStatus').innerText = '( 正在將配送單同步至雲端... )';
+                document.getElementById('flowStatus').innerText = '( 正在產生截圖圖片... )';
                 document.getElementById('flowStatus').style.color = '#6b7280';
 
-                uploadDataToGoogleSheet();
+                generateAndDownloadScreenshot();
             }
         });
 
         function restoreButtons() {
-            document.getElementById('clearDriverBtn').style.display = 'inline-block';
             document.getElementById('clearStoreBtn').style.display = 'inline-block';
-            document.getElementById('lockStage2Btn').style.display = 'block';
             document.getElementById('lockStage2Btn').disabled = false;
             document.getElementById('lockStage2Btn').style.backgroundColor = '#16a34a';
-            document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
+            document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（自動下載簽單）";
         }
     </script>
 </body>
