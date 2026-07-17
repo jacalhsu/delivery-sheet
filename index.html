@@ -525,29 +525,32 @@
             });
         }
 
-        const group1Names = ["冷凍件數", "冷凍PE桶", "冷凍大物流箱", "冷凍港點", "冷凍蛋糕", "冰淇淋", "冷藏件數", "冷藏小物箱", "冷藏蛋糕", "常溫件數", "常溫大物流箱", "轉運原件", "轉運物流箱", "文件袋/盒", "衣服籃", "地墊", "出貨總件數"];
-        const group2Names = ["大物流箱", "小物箱", "大PE桶", "小PE桶", "籠車", "蛋糕箱", "蛋糕蓋", "生魚片盒", "香蕉籃", "原料件數"];
-        const group3Names = ["大物流箱 (回收)", "小物箱 (回收)", "大PE桶 (回收)", "小PE桶 (回收)", "籠車 (回收)", "蛋糕箱 (回收)", "蛋糕蓋 (回收)", "生魚片盒 (回收)", "香蕉籃 (回收)", "原件 (回收)", "文件袋/盒 (回收)", "衣服籃 (回收)", "地墊 (回收)"];
-
+        // 🟢 智慧型自動防呆分類（免去白名單比對，再也不怕試算表打錯字漏品項！）
         function renderItems(items) {
             const t1 = document.querySelector("#table1 tbody");
             const t2 = document.querySelector("#table2 tbody");
             const t3 = document.querySelector("#table3 tbody");
 
             items.forEach(item => {
+                const name = item.name.trim();
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td style="color: #000000; font-weight: 500;">${item.name}</td>
+                    <td style="color: #000000; font-weight: 500;">${name}</td>
                     <td align="center" style="color: #000000; font-weight: bold;">${item.expected_qty}</td>
-                    <td align="center"><input type="number" class="qty-input" data-name="${item.name}" value="${item.expected_qty}"></td>
+                    <td align="center"><input type="number" class="qty-input" data-name="${name}" value="${item.expected_qty}"></td>
                 `;
 
-                if (group1Names.includes(item.name)) {
-                    t1.appendChild(tr);
-                } else if (group2Names.includes(item.name)) {
-                    t2.appendChild(tr);
-                } else if (group3Names.includes(item.name)) {
+                // 1. 只要名字包含「回收」，一律進第 3 欄
+                if (name.includes("回收")) {
                     t3.appendChild(tr);
+                } 
+                // 2. 名字不含回收，但包含物流容器關鍵字（箱、桶、籃、藍、車、盒、蓋），進第 2 欄
+                else if (name.includes("箱") || name.includes("桶") || name.includes("籃") || name.includes("藍") || name.includes("車") || name.includes("盒") || name.includes("蓋")) {
+                    t2.appendChild(tr);
+                } 
+                // 3. 其餘所有的常態出貨、溫層項目，一律進第 1 欄
+                else {
+                    t1.appendChild(tr);
                 }
             });
         }
