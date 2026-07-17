@@ -109,7 +109,7 @@
             line-height: 1.5;
         }
 
-        /* 件數核對主單（點選卡片後動態展開） */
+        /* 件數核對主單 */
         .sheet-container {
             background: #fff;
             padding: 25px;
@@ -272,11 +272,8 @@
         <!-- 頂部控制面板 -->
         <div class="control-panel">
             <label for="driverSelect">👤 司機選單：</label>
-            <select id="driverSelect" class="driver-select">
-                <option value="">-- 請選擇您的姓名 --</option>
-                <option value="李大同">李大同</option>
-                <option value="張小明">張小明</option>
-                <option value="王中平">王中平</option>
+            <select id="driverSelect" class="driver-select" disabled>
+                <option value="">載入司機名單中...</option>
             </select>
             <button id="btnRefresh" class="btn-refresh">重整任務</button>
         </div>
@@ -402,6 +399,30 @@
 
         const driverSign = setupCanvas('driverCanvas', 'clearDriverBtn');
         const storeSign = setupCanvas('storeCanvas', 'clearStoreBtn');
+
+        // 🟢 動態載入司機名單
+        function loadDrivers() {
+            fetch(`${GAS_API_URL}?action=get_drivers`)
+            .then(res => res.json())
+            .then(res => {
+                const select = document.getElementById('driverSelect');
+                if (res.status === "success" && res.drivers.length > 0) {
+                    select.innerHTML = '<option value="">-- 請選擇您的姓名 --</option>';
+                    res.drivers.forEach(name => {
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.innerText = name;
+                        select.appendChild(opt);
+                    });
+                    select.disabled = false;
+                } else {
+                    select.innerHTML = '<option value="">無配送司機資料</option>';
+                }
+            })
+            .catch(err => {
+                document.getElementById('driverSelect').innerHTML = '<option value="">連線錯誤</option>';
+            });
+        }
 
         // 🟢 讀取該司機的「今日任務列表」
         function loadDriverTasks() {
@@ -654,6 +675,11 @@
             document.getElementById('lockStage2Btn').style.backgroundColor = '#16a34a';
             document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
         }
+
+        // 🟢 網頁啟動時：動態去試算表載入司機名單
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDrivers();
+        });
 
         // 綁定事件
         document.getElementById('driverSelect').addEventListener('change', loadDriverTasks);
