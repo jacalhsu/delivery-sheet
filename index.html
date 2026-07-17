@@ -3,31 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>件數核對單 - 雙階段簽收系統</title>
+    <title>饗賓集團冷鏈配送系統 - 司機任務台</title>
     
+    <!-- 引入 html2canvas 截圖工具 -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f3f4f6;
+            background-color: #f1f5f9;
             margin: 0;
-            padding: 10px;
-            color: #333;
-            font-size: 13px;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: #fff;
             padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            color: #1e293b;
         }
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* 司機選擇與控制面板 */
+        .control-panel {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .control-panel label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #475569;
+        }
+        .driver-select {
+            padding: 8px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            outline: none;
+            cursor: pointer;
+            background: #f8fafc;
+        }
+        .btn-refresh {
+            background-color: #0f172a;
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* 任務卡片清單 */
+        .task-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .task-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
+            border-left: 5px solid #94a3b8;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+        }
+        .task-card.pending {
+            border-left-color: #eab308; /* 黃色：待簽收 */
+        }
+        .task-card.completed {
+            border-left-color: #22c55e; /* 綠色：已簽收 */
+            opacity: 0.85;
+        }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .store-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .task-status-badge {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-weight: bold;
+        }
+        .status-pending { background-color: #fef9c3; color: #854d0e; }
+        .status-completed { background-color: #dcfce7; color: #166534; }
+        .task-details {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        /* 件數核對主單（點選卡片後動態展開） */
+        .sheet-container {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            display: none; /* 預設隱藏 */
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .header {
             border-bottom: 2px solid #ef4444;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -35,26 +134,26 @@
         .header h1 {
             color: #dc2626;
             margin: 0;
-            font-size: 20px;
+            font-size: 22px;
         }
         .info-grid {
             display: flex;
             gap: 20px;
             font-size: 13px;
-            color: #555;
+            color: #475569;
         }
 
         .main-grid {
             display: grid;
             grid-template-columns: 1.1fr 1fr 1fr;
             gap: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .column-box {
             background-color: #fafafa;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
         }
         table {
             width: 100%;
@@ -62,20 +161,22 @@
         }
         th, td {
             padding: 6px 8px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e2e8f0;
             text-align: left;
+            font-size: 13px;
         }
         th {
             font-weight: bold;
-            color: #4b5563;
+            color: #475569;
+            background-color: #f8fafc;
         }
         
         .column-title {
             font-size: 14px;
             font-weight: bold;
-            padding: 6px 10px;
-            border-radius: 4px;
-            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
         }
         .blue-title { background-color: #e0f2fe; color: #0369a1; }
         .green-title { background-color: #dcfce7; color: #15803d; }
@@ -86,7 +187,7 @@
             padding: 4px;
             font-size: 13px;
             text-align: center;
-            border: 1px solid #d1d5db;
+            border: 1px solid #cbd5e1;
             border-radius: 4px;
         }
         .qty-input:focus {
@@ -98,15 +199,15 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            border-top: 2px solid #e5e7eb;
-            padding-top: 15px;
-            margin-top: 10px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 20px;
+            margin-top: 15px;
         }
         .signature-card {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 12px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
         }
         .signature-card.disabled {
             opacity: 0.5;
@@ -116,7 +217,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-weight: bold;
             font-size: 14px;
         }
@@ -127,13 +228,13 @@
         }
         canvas {
             border: 1px dashed #cbd5e1;
-            border-radius: 6px;
+            border-radius: 8px;
             background: #fff;
             touch-action: none;
         }
         .btn-clear {
-            background-color: #e5e7eb;
-            color: #4b5563;
+            background-color: #e2e8f0;
+            color: #475569;
             border: none;
             padding: 6px 12px;
             font-size: 12px;
@@ -166,116 +267,102 @@
 </head>
 <body>
 
-    <div class="container" id="captureArea">
-        <div class="header">
-            <h1>件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 流程進行中 )</span></h1>
-            <div id="headerInfo" class="info-grid">
-                <div><strong>單號：</strong><span id="orderIdText">未提供</span></div>
-                <div><strong>日期：</strong><span id="orderDate">--/--/--</span></div>
-                <div><strong>實際到貨時間：</strong><span id="arrivalTime">--:--</span></div>
-                <div><strong>製表人員：</strong><span id="creator">物流系統</span></div>
+    <div class="app-container">
+        
+        <!-- 頂部控制面板 -->
+        <div class="control-panel">
+            <label for="driverSelect">👤 司機選單：</label>
+            <select id="driverSelect" class="driver-select">
+                <option value="">-- 請選擇您的姓名 --</option>
+                <option value="李大同">李大同</option>
+                <option value="張小明">張小明</option>
+                <option value="王中平">王中平</option>
+            </select>
+            <button id="btnRefresh" class="btn-refresh">重整任務</button>
+        </div>
+
+        <!-- 任務清單區域 -->
+        <h3 style="margin-bottom: 10px; color: #475569;">📅 今日派送清單</h3>
+        <div id="taskList" class="task-list">
+            <div style="color: #94a3b8; font-style: italic;">請先在上方選擇司機姓名以載入今日任務...</div>
+        </div>
+
+        <!-- 核對與雙簽收主表單 (點選卡片才展開) -->
+        <div class="sheet-container" id="captureArea">
+            <div class="header">
+                <h1>饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 核對中 )</span></h1>
+                <div id="headerInfo" class="info-grid">
+                    <div><strong>單號：</strong><span id="orderIdText">--</span></div>
+                    <div><strong>日期：</strong><span id="orderDate">--/--/--</span></div>
+                    <div><strong>實際到貨時間：</strong><span id="arrivalTime">--:--</span></div>
+                    <div><strong>製表人員：</strong><span id="creator">--</span></div>
+                </div>
+            </div>
+
+            <!-- 橫向三欄式大網格 -->
+            <div class="main-grid">
+                <div class="column-box" id="col1">
+                    <div class="column-title blue-title">1. 溫層與常態出貨項目</div>
+                    <table id="table1">
+                        <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="column-box" id="col2">
+                    <div class="column-title green-title">2. 本次出貨 (物流容器)</div>
+                    <table id="table2">
+                        <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="column-box" id="col3">
+                    <div class="column-title amber-title">3. 本次回收 (物流容器)</div>
+                    <table id="table3">
+                        <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 底部雙階段簽章區 -->
+            <div class="bottom-section">
+                <div class="signature-card" id="driverCard">
+                    <div class="signature-header">
+                        <span style="color: #2563eb;">第一階段：司機確認點收</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="driverCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
+                        <button id="clearDriverBtn" class="btn-clear">清除</button>
+                    </div>
+                    <button id="lockStage1Btn" class="btn btn-blue">完成第一階段點交並鎖定</button>
+                </div>
+
+                <div class="signature-card disabled" id="storeCard">
+                    <div class="signature-header">
+                        <span style="color: #16a34a;">第二階段：分店人員簽收</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="storeCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
+                        <button id="clearStoreBtn" class="btn-clear">清除</button>
+                    </div>
+                    <button id="lockStage2Btn" class="btn btn-green">確認核對並完成簽收（正式鎖檔）</button>
+                </div>
             </div>
         </div>
 
-        <div class="main-grid">
-            <div class="column-box">
-                <div class="column-title blue-title">1. 溫層與常態出貨項目</div>
-                <table>
-                    <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
-                    <tbody>
-                        <tr><td>冷凍件數</td><td align="center">5</td><td align="center"><input type="number" class="qty-input" value="5"></td></tr>
-                        <tr><td>冷凍PE桶</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>冷凍大物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>冷凍港點</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>冷凍蛋糕</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>冰淇淋</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>冷藏件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>冷藏小物箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>冷藏蛋糕</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>常溫件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>常溫大物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>轉運原件</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>轉運物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>文件袋/盒</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>衣服籃</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>地墊</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr style="font-weight: bold; background: #e0f2fe;"><td>出貨總件數</td><td align="center">5</td><td align="center"><input type="number" class="qty-input" value="5"></td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="column-box">
-                <div class="column-title green-title">2. 本次出貨 (物流容器)</div>
-                <table>
-                    <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
-                    <tbody>
-                        <tr><td>大物流箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>小物箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>大PE桶</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>小PE桶</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>籠車</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>蛋糕箱</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>蛋糕蓋</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>生魚片盒</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>香蕉籃</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>原料件數</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="column-box">
-                <div class="column-title amber-title">3. 本次回收 (物流容器)</div>
-                <table>
-                    <thead><tr><th>項目名稱</th><th style="text-align:center;">預計</th><th style="text-align:center;">實收</th></tr></thead>
-                    <tbody>
-                        <tr><td>大物流箱 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>小物箱 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>大PE桶 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>小PE桶 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>籠車 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>蛋糕箱 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>蛋糕蓋 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>生魚片盒 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>香蕉籃 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>原件 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>文件袋/盒 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>衣服籃 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                        <tr><td>地墊 (回收)</td><td align="center">0</td><td align="center"><input type="number" class="qty-input" value="0"></td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="bottom-section">
-            <div class="signature-card" id="driverCard">
-                <div class="signature-header">
-                    <span style="color: #2563eb;">第一階段：司機確認點收</span>
-                </div>
-                <div class="canvas-container">
-                    <canvas id="driverCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
-                    <button id="clearDriverBtn" class="btn-clear">清除</button>
-                </div>
-                <button id="lockStage1Btn" class="btn btn-blue">完成第一階段點交並鎖定</button>
-            </div>
-
-            <div class="signature-card disabled" id="storeCard">
-                <div class="signature-header">
-                    <span style="color: #16a34a;">第二階段：分店人員簽收</span>
-                </div>
-                <div class="canvas-container">
-                    <canvas id="storeCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
-                    <button id="clearStoreBtn" class="btn-clear">清除</button>
-                </div>
-                <button id="lockStage2Btn" class="btn btn-green">確認核對並完成簽收（自動下載簽單）</button>
-            </div>
-        </div>
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const CURRENT_ORDER_ID = urlParams.get('order_id') || "GUO005";
+        // ==================== [⚠️ 請更換成您最新發佈的 GAS 部署網址] ====================
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwouLbQE43GFoXp9DpZjIfZV2dcdXcLmcIG2ReCbYkQPc68HzuNijCQdeZuA5t_7G_W/exec"; 
+        // ============================================================================
 
-        // 初始化簽名板
+        let currentActiveOrderId = "";
+        let currentTasks = [];
+
+        // 初始化手寫板
         function setupCanvas(canvasId, clearBtnId) {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext('2d');
@@ -316,16 +403,136 @@
         const driverSign = setupCanvas('driverCanvas', 'clearDriverBtn');
         const storeSign = setupCanvas('storeCanvas', 'clearStoreBtn');
 
-        // 頁面初始化
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('orderIdText').innerText = CURRENT_ORDER_ID;
-            const now = new Date();
-            document.getElementById('orderDate').innerText = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
-        });
+        // 🟢 讀取該司機的「今日任務列表」
+        function loadDriverTasks() {
+            const driver = document.getElementById('driverSelect').value;
+            const listDiv = document.getElementById('taskList');
+            const sheetForm = document.getElementById('captureArea');
+            
+            sheetForm.style.display = "none";
+
+            if (!driver) {
+                listDiv.innerHTML = '<div style="color: #94a3b8; font-style: italic;">請先在上方選擇司機姓名以載入今日任務...</div>';
+                return;
+            }
+
+            listDiv.innerHTML = '<div style="color: #64748b;">正在連線試算表，載入今日配送清單...</div>';
+
+            fetch(`${GAS_API_URL}?action=get_tasks&driver=${encodeURIComponent(driver)}`)
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === "success") {
+                    currentTasks = res.tasks;
+                    renderTaskList(res.tasks);
+                } else {
+                    listDiv.innerHTML = `<div style="color:red;">載入清單失敗：${res.message}</div>`;
+                }
+            })
+            .catch(err => {
+                listDiv.innerHTML = '<div style="color:red;">網路連線錯誤，無法載入任務！</div>';
+            });
+        }
+
+        // 渲染任務卡片
+        function renderTaskList(tasks) {
+            const listDiv = document.getElementById('taskList');
+            if (tasks.length === 0) {
+                listDiv.innerHTML = '<div style="color: #94a3b8; font-style: italic;">今日無此司機的配送任務。</div>';
+                return;
+            }
+
+            listDiv.innerHTML = "";
+            tasks.forEach(task => {
+                const isDone = task.status === "已簽收鎖定";
+                const card = document.createElement('div');
+                card.className = `task-card ${isDone ? 'completed' : 'pending'}`;
+                card.innerHTML = `
+                    <div class="task-header">
+                        <span class="store-name">${task.store_name}</span>
+                        <span class="task-status-badge ${isDone ? 'status-completed' : 'status-pending'}">${task.status}</span>
+                    </div>
+                    <div class="task-details">
+                        <strong>單號：</strong>${task.order_id}<br>
+                        <strong>日期：</strong>${task.date}<br>
+                        <strong>實際到貨時間：</strong>${task.arrival_time}
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    if (isDone) {
+                        alert("此配送單已完成雙階段簽收鎖檔，無法重複修改。");
+                        return;
+                    }
+                    openOrderForm(task);
+                });
+
+                listDiv.appendChild(card);
+            });
+        }
+
+        // 🟢 點選卡片：即時載入預計件數
+        function openOrderForm(task) {
+            currentActiveOrderId = task.order_id;
+            
+            document.querySelector("#table1 tbody").innerHTML = "";
+            document.querySelector("#table2 tbody").innerHTML = "";
+            document.querySelector("#table3 tbody").innerHTML = "";
+            resetSignatureForm();
+
+            document.getElementById('orderIdText').innerText = task.order_id;
+            document.getElementById('orderDate').innerText = task.date;
+            document.getElementById('creator').innerText = task.creator;
+            document.getElementById('arrivalTime').innerText = "--:--";
+            
+            document.getElementById('flowStatus').innerText = "( 即時載入項目中... )";
+            document.getElementById('flowStatus').style.color = "#dc2626";
+
+            const sheetForm = document.getElementById('captureArea');
+            sheetForm.style.display = "block";
+            sheetForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            fetch(`${GAS_API_URL}?action=get_order&order_id=${task.order_id}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === "success") {
+                    renderItems(res.items);
+                    document.getElementById('flowStatus').innerText = "( 第一階段：雙方核對中 )";
+                } else {
+                    alert("載入項目失敗！");
+                }
+            });
+        }
+
+        const group1Names = ["冷凍件數", "冷凍PE桶", "冷凍大物流箱", "冷凍港點", "冷凍蛋糕", "冰淇淋", "冷藏件數", "冷藏小物箱", "冷藏蛋糕", "常溫件數", "常溫大物流箱", "轉運原件", "轉運物流箱", "文件袋/盒", "衣服籃", "地墊", "出貨總件數"];
+        const group2Names = ["大物流箱", "小物箱", "大PE桶", "小PE桶", "籠車", "蛋糕箱", "蛋糕蓋", "生魚片盒", "香蕉籃", "原料件數"];
+        const group3Names = ["大物流箱 (回收)", "小物箱 (回收)", "大PE桶 (回收)", "小PE桶 (回收)", "籠車 (回收)", "蛋糕箱 (回收)", "蛋糕蓋 (回收)", "生魚片盒 (回收)", "香蕉籃 (回收)", "原件 (回收)", "文件袋/盒 (回收)", "衣服籃 (回收)", "地墊 (回收)"];
+
+        function renderItems(items) {
+            const t1 = document.querySelector("#table1 tbody");
+            const t2 = document.querySelector("#table2 tbody");
+            const t3 = document.querySelector("#table3 tbody");
+
+            items.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${item.name}</td>
+                    <td align="center">${item.expected_qty}</td>
+                    <td align="center"><input type="number" class="qty-input" data-name="${item.name}" value="${item.expected_qty}"></td>
+                `;
+
+                if (group1Names.includes(item.name)) {
+                    t1.appendChild(tr);
+                } else if (group2Names.includes(item.name)) {
+                    t2.appendChild(tr);
+                } else if (group3Names.includes(item.name)) {
+                    t3.appendChild(tr);
+                }
+            });
+        }
 
         // 第一階段鎖定
         document.getElementById('lockStage1Btn').addEventListener('click', () => {
-            if (confirm("第一階段鎖定：確定數量無誤且司機已簽名？")) {
+            if (confirm("確認第一階段：數量核對無誤且司機已簽名？")) {
                 document.querySelectorAll('.qty-input').forEach(input => {
                     input.disabled = true;
                     input.style.backgroundColor = '#f3f4f6';
@@ -340,76 +547,117 @@
                 document.getElementById('flowStatus').innerText = '( 第二階段：分店核對簽收中 )';
                 document.getElementById('flowStatus').style.color = '#16a34a';
 
-                alert("第一階段點交成功！請將平板交給分店人員進行第二階段簽收。");
+                alert("第一階段確認成功！請將設備移交分店人員進行簽章。");
             }
         });
 
-        // 🌟 純前端截圖並「直接自動下載」為 PNG 圖片，不走任何 Google 後端與 API
-        function generateAndDownloadScreenshot() {
+        // 🌟 核心雙保險：更新試算表數據 + 網頁端自動下載圖片
+        function uploadDataAndDownloadScreenshot() {
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             document.getElementById('arrivalTime').innerText = timeStr;
 
-            // 暫時隱藏清除與送出按鈕，保證輸出的簽章單美觀乾淨
+            // 隱藏按鈕保證截圖美觀
             document.getElementById('clearDriverBtn').style.display = 'none';
             document.getElementById('clearStoreBtn').style.display = 'none';
             document.getElementById('lockStage1Btn').style.display = 'none';
             document.getElementById('lockStage2Btn').style.display = 'none';
 
-            // 執行 html2canvas 截圖
+            // 1. 收集實收數量
+            const finalItems = [];
+            document.querySelectorAll(".qty-input").forEach(input => {
+                finalItems.push({
+                    name: input.getAttribute("data-name"),
+                    actual_qty: parseInt(input.value) || 0
+                });
+            });
+
+            // 2. 首先，使用 html2canvas 產生簽單截圖，並觸發手機/電腦「自動下載」
             html2canvas(document.getElementById('captureArea'), {
-                scale: 1.5, // 提高解析度
+                scale: 1.5,
                 useCORS: true
             }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 
-                // 建立一個虛擬的 <a> 標籤，點擊觸發瀏覽器下載
+                // 產生下載行為
                 const downloadLink = document.createElement('a');
                 downloadLink.href = imgData;
-                downloadLink.download = `單號_${CURRENT_ORDER_ID}_簽收確認單.png`;
-                
+                downloadLink.download = `單號_${currentActiveOrderId}_簽收確認單.png`;
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
 
-                alert("🎉 簽收完成！件數核對單截圖已自動下載至您的設備中。");
-
-                document.getElementById('lockStage2Btn').innerText = "簽章單已自動下載並儲存";
-                document.getElementById('flowStatus').innerText = '( 流程已結束 - 簽收單已完成下載 )';
-                document.getElementById('flowStatus').style.color = '#6b7280';
-                document.getElementById('lockStage2Btn').style.display = 'block';
-                document.getElementById('lockStage2Btn').disabled = true;
-                
-            }).catch(err => {
-                console.error("截圖失敗:", err);
-                alert("產生簽收截圖失敗！");
-                restoreButtons();
+                // 3. 下載完成後，將「點收數據」傳回 100% 通電的試算表後台更新
+                fetch(GAS_API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        order_id: currentActiveOrderId,
+                        arrival_time: timeStr,
+                        items: finalItems
+                    })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.status === "success") {
+                        alert("🎉 簽收完成！實收數量已自動更新回試算表，且確認單截圖已成功下載儲存。");
+                        loadDriverTasks(); // 重新整理任務卡片
+                    } else {
+                        alert("試算表數據同步失敗：" + result.message + "\n（但您的簽簽單截圖已經下載成功！）");
+                        restoreButtons();
+                    }
+                })
+                .catch(err => {
+                    alert("連線 GAS 伺服器失敗，請檢查網路！\n（但您的簽收單截圖已經下載成功！）");
+                    restoreButtons();
+                });
             });
         }
 
-        // 第二階段正式點收
+        // 第二階段正式提交
         document.getElementById('lockStage2Btn').addEventListener('click', () => {
-            if (confirm("確認點收數量無誤且完成分店人員簽章？\n系統將會鎖定本表單，並自動將「全螢幕截圖」下載至您的設備。")) {
+            if (confirm("確認核對無誤？系統將同步實收數據回試算表，並自動下載本簽章單截圖。")) {
                 storeSign.canvas.style.pointerEvents = 'none';
                 storeSign.canvas.style.backgroundColor = '#e5e7eb';
                 document.getElementById('clearStoreBtn').style.display = 'none';
                 document.getElementById('lockStage2Btn').disabled = true;
                 document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
-                document.getElementById('lockStage2Btn').innerText = '產生核對單截圖中...';
+                document.getElementById('lockStage2Btn').innerText = '資料同步與截圖產生中...';
 
-                document.getElementById('flowStatus').innerText = '( 正在產生截圖圖片... )';
-                document.getElementById('flowStatus').style.color = '#6b7280';
-
-                generateAndDownloadScreenshot();
+                uploadDataAndDownloadScreenshot();
             }
         });
+
+        function resetSignatureForm() {
+            driverSign.ctx.clearRect(0, 0, driverSign.canvas.width, driverSign.canvas.height);
+            storeSign.ctx.clearRect(0, 0, storeSign.canvas.width, storeSign.canvas.height);
+            
+            driverSign.canvas.style.pointerEvents = 'auto';
+            driverSign.canvas.style.backgroundColor = '#fff';
+            storeSign.canvas.style.pointerEvents = 'auto';
+            storeSign.canvas.style.backgroundColor = '#fff';
+
+            document.getElementById('clearDriverBtn').style.display = 'inline-block';
+            document.getElementById('clearStoreBtn').style.display = 'inline-block';
+            
+            document.getElementById('lockStage1Btn').style.display = 'block';
+            document.getElementById('lockStage2Btn').style.display = 'block';
+            document.getElementById('lockStage2Btn').disabled = false;
+            document.getElementById('lockStage2Btn').style.backgroundColor = '#16a34a';
+            document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
+
+            document.getElementById('storeCard').classList.add('disabled');
+        }
 
         function restoreButtons() {
             document.getElementById('clearStoreBtn').style.display = 'inline-block';
             document.getElementById('lockStage2Btn').disabled = false;
             document.getElementById('lockStage2Btn').style.backgroundColor = '#16a34a';
-            document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（自動下載簽單）";
+            document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
         }
+
+        // 綁定事件
+        document.getElementById('driverSelect').addEventListener('change', loadDriverTasks);
+        document.getElementById('btnRefresh').addEventListener('click', loadDriverTasks);
     </script>
 </body>
 </html>
