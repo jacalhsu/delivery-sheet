@@ -45,6 +45,7 @@
             outline: none;
             cursor: pointer;
             background: #f8fafc;
+            color: #000;
         }
         .btn-refresh {
             background-color: #0f172a;
@@ -109,9 +110,10 @@
             line-height: 1.5;
         }
 
-        /* 件數核對主單 */
+        /* 件數核對主單 - 為了保證截圖背景，強制不透明白底與深色文字 */
         .sheet-container {
-            background: #fff;
+            background: #ffffff !important; 
+            color: #000000 !important;
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
@@ -132,7 +134,7 @@
             align-items: center;
         }
         .header h1 {
-            color: #dc2626;
+            color: #dc2626 !important;
             margin: 0;
             font-size: 22px;
         }
@@ -140,7 +142,7 @@
             display: flex;
             gap: 20px;
             font-size: 13px;
-            color: #475569;
+            color: #000000 !important; /* 強制頂部單號資訊變黑 */
         }
 
         .main-grid {
@@ -150,8 +152,8 @@
             margin-bottom: 20px;
         }
         .column-box {
-            background-color: #fafafa;
-            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border: 1px solid #94a3b8; /* 加深外框線 */
             border-radius: 8px;
             padding: 10px;
         }
@@ -161,14 +163,15 @@
         }
         th, td {
             padding: 6px 8px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #cbd5e1; /* 加深內網格線 */
             text-align: left;
             font-size: 13px;
+            color: #000000 !important; /* 強制文字純黑 */
         }
         th {
             font-weight: bold;
-            color: #475569;
-            background-color: #f8fafc;
+            color: #000000 !important;
+            background-color: #f1f5f9;
         }
         
         .column-title {
@@ -187,9 +190,11 @@
             padding: 4px;
             font-size: 13px;
             text-align: center;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #475569; /* 加深輸入框格線 */
             border-radius: 4px;
-            color: #000000;
+            color: #000000 !important; /* 強制輸入數字變極黑 */
+            font-weight: bold;
+            background-color: #ffffff;
         }
         .qty-input:focus {
             outline: none;
@@ -200,15 +205,16 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            border-top: 2px solid #e2e8f0;
+            border-top: 2px solid #94a3b8;
             padding-top: 20px;
             margin-top: 15px;
         }
         .signature-card {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border: 1px solid #94a3b8;
             border-radius: 10px;
             padding: 15px;
+            color: #000000 !important;
         }
         .signature-card.disabled {
             opacity: 0.5;
@@ -228,9 +234,9 @@
             align-items: flex-end;
         }
         canvas {
-            border: 1px dashed #cbd5e1;
+            border: 1px dashed #475569;
             border-radius: 8px;
-            background: #fff;
+            background: #ffffff;
             touch-action: none;
         }
         .btn-clear {
@@ -288,7 +294,7 @@
         <!-- 核對與雙簽收主表單 (點選卡片才展開) -->
         <div class="sheet-container" id="captureArea">
             <div class="header">
-                <h1>饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 核對中 )</span></h1>
+                <h1 style="color: #dc2626 !important;">饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626 !important; font-weight: normal;">( 核對中 )</span></h1>
                 <div id="headerInfo" class="info-grid">
                     <div><strong>單號：</strong><span id="orderIdText">--</span></div>
                     <div><strong>日期：</strong><span id="orderDate">--/--/--</span></div>
@@ -328,7 +334,7 @@
             <div class="bottom-section">
                 <div class="signature-card" id="driverCard">
                     <div class="signature-header">
-                        <span style="color: #2563eb;">第一階段：司機確認點收</span>
+                        <span style="color: #2563eb; font-weight: bold;">第一階段：司機確認點收</span>
                     </div>
                     <div class="canvas-container">
                         <canvas id="driverCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
@@ -339,7 +345,7 @@
 
                 <div class="signature-card disabled" id="storeCard">
                     <div class="signature-header">
-                        <span style="color: #16a34a;">第二階段：分店人員簽收</span>
+                        <span style="color: #16a34a; font-weight: bold;">第二階段：分店人員簽收</span>
                     </div>
                     <div class="canvas-container">
                         <canvas id="storeCanvas" width="380" height="90" style="width: 100%; max-width: 400px;"></canvas>
@@ -378,8 +384,8 @@
                 if (!isDrawing) return;
                 e.preventDefault();
                 const pos = getPos(e);
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = '#000000'; // 簽名線條強制深黑
+                ctx.lineWidth = 4;           // 🌟 手寫筆跡線條加粗，保證截圖清晰
+                ctx.strokeStyle = '#000000'; // 🌟 筆跡強制為純黑，不再使用灰色
                 ctx.lineTo(pos.x, pos.y);
                 ctx.stroke();
                 ctx.beginPath();
@@ -525,7 +531,7 @@
             });
         }
 
-        // 🟢 智慧型自動防呆分類（免去白名單比對，再也不怕試算表打錯字漏品項！）
+        // 智慧型自動防呆分類
         function renderItems(items) {
             const t1 = document.querySelector("#table1 tbody");
             const t2 = document.querySelector("#table2 tbody");
@@ -535,20 +541,17 @@
                 const name = item.name.trim();
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td style="color: #000000; font-weight: 500;">${name}</td>
-                    <td align="center" style="color: #000000; font-weight: bold;">${item.expected_qty}</td>
+                    <td style="color: #000000; font-weight: bold;">${name}</td>
+                    <td align="center" style="color: #000000; font-weight: 800; font-size: 15px;">${item.expected_qty}</td>
                     <td align="center"><input type="number" class="qty-input" data-name="${name}" value="${item.expected_qty}"></td>
                 `;
 
-                // 1. 只要名字包含「回收」，一律進第 3 欄
                 if (name.includes("回收")) {
                     t3.appendChild(tr);
                 } 
-                // 2. 名字不含回收，但包含物流容器關鍵字（箱、桶、籃、藍、車、盒、蓋），進第 2 欄
                 else if (name.includes("箱") || name.includes("桶") || name.includes("籃") || name.includes("藍") || name.includes("車") || name.includes("盒") || name.includes("蓋")) {
                     t2.appendChild(tr);
                 } 
-                // 3. 其餘所有的常態出貨、溫層項目，一律進第 1 欄
                 else {
                     t1.appendChild(tr);
                 }
@@ -558,14 +561,18 @@
         // 第一階段鎖定
         document.getElementById('lockStage1Btn').addEventListener('click', () => {
             if (confirm("確認第一階段：數量核對無誤且司機已簽名？")) {
+                // 🌟 改進點：使用 readOnly 而不使用 disabled。
+                // 這樣瀏覽器就不會強行把字體抹白/變灰，能保持高強度的深黑字體！
                 document.querySelectorAll('.qty-input').forEach(input => {
-                    input.disabled = true;
-                    input.style.backgroundColor = '#f1f5f9';
+                    input.readOnly = true;
+                    input.style.backgroundColor = '#f8fafc';
                     input.style.color = '#000000';
+                    input.style.fontWeight = 'bold';
+                    input.style.border = '1px solid #94a3b8';
                 });
                 
                 driverSign.canvas.style.pointerEvents = 'none';
-                driverSign.canvas.style.backgroundColor = '#f1f5f9';
+                driverSign.canvas.style.backgroundColor = '#f8fafc';
                 document.getElementById('clearDriverBtn').style.display = 'none';
                 document.getElementById('lockStage1Btn').style.display = 'none';
 
@@ -577,13 +584,13 @@
             }
         });
 
-        // 🌟 核心雙保險：更新試算表數據 + 網頁端自動下載高清晰、白底截圖
+        // 🌟 核心雙保險：更新試算表數據 + 網頁端自動下載 100% 高對比深黑白底簽單
         function uploadDataAndDownloadScreenshot() {
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             document.getElementById('arrivalTime').innerText = timeStr;
 
-            // 隱藏按鈕以保證截圖完美美觀
+            // 暫時隱藏按鈕以保證截圖完美美觀
             document.getElementById('clearDriverBtn').style.display = 'none';
             document.getElementById('clearStoreBtn').style.display = 'none';
             document.getElementById('lockStage1Btn').style.display = 'none';
@@ -598,36 +605,12 @@
                 });
             });
 
-            // 2. 使用 html2canvas 產生簽單截圖（加入強制白底設定與強對比文字控制）
+            // 2. 呼叫 html2canvas 執行高對比純白底截圖
             html2canvas(document.getElementById('captureArea'), {
-                scale: 2,                   // 提高解析度，讓格線與簽章更銳利清晰
+                scale: 2.2,                 // 再拉高解析度，確保字體絕不模糊
                 useCORS: true,
-                backgroundColor: "#ffffff", // 🌟 核心關鍵：強制指定不透明純白背景，徹底解決透光淡化問題
-                logging: false,
-                onclone: (clonedDoc) => {
-                    // 為了使截圖輸出高清晰對比，強制在複製本上渲染極深黑字體與深色邊框
-                    const clonedCapture = clonedDoc.getElementById('captureArea');
-                    clonedCapture.style.backgroundColor = "#ffffff";
-                    clonedCapture.style.color = "#000000";
-                    
-                    clonedCapture.querySelectorAll('td, th').forEach(el => {
-                        el.style.color = "#000000";
-                        el.style.borderColor = "#94a3b8"; // 格線強制加深
-                    });
-                    clonedCapture.querySelectorAll('.qty-input').forEach(el => {
-                        el.style.color = "#000000";
-                        el.style.backgroundColor = "#ffffff";
-                        el.style.borderColor = "#475569";
-                    });
-                    clonedCapture.querySelectorAll('canvas').forEach(el => {
-                        el.style.borderColor = "#475569";
-                    });
-                    // 將頂部單號與配送細節強制改回純黑字體
-                    clonedCapture.querySelector('.header').style.borderBottomColor = "#dc2626";
-                    clonedCapture.querySelectorAll('#headerInfo div').forEach(el => {
-                        el.style.color = "#000000";
-                    });
-                }
+                backgroundColor: "#ffffff", // 強制渲染底色為 100% 純白色
+                logging: false
             }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 
@@ -672,7 +655,7 @@
         document.getElementById('lockStage2Btn').addEventListener('click', () => {
             if (confirm("確認核對無誤？系統將同步實收數據回試算表，並自動下載本簽章單截圖。")) {
                 storeSign.canvas.style.pointerEvents = 'none';
-                storeSign.canvas.style.backgroundColor = '#f1f5f9';
+                storeSign.canvas.style.backgroundColor = '#f8fafc';
                 document.getElementById('clearStoreBtn').style.display = 'none';
                 document.getElementById('lockStage2Btn').disabled = true;
                 document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
