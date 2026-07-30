@@ -153,7 +153,7 @@
         }
         .column-box {
             background-color: #ffffff;
-            border: 1px solid #64748b;
+            border: 1px solid #000000;
             border-radius: 8px;
             padding: 10px;
         }
@@ -163,7 +163,7 @@
         }
         th, td {
             padding: 6px 8px;
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 1px solid #475569;
             text-align: left;
             font-size: 13px;
             color: #000000;
@@ -190,7 +190,7 @@
             padding: 4px;
             font-size: 13px;
             text-align: center;
-            border: 1px solid #334155;
+            border: 1px solid #000000;
             border-radius: 4px;
             color: #000000;
             font-weight: bold;
@@ -201,13 +201,13 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            border-top: 2px solid #64748b;
+            border-top: 2px solid #000000;
             padding-top: 20px;
             margin-top: 15px;
         }
         .signature-card {
             background-color: #ffffff;
-            border: 1px solid #64748b;
+            border: 1px solid #000000;
             border-radius: 10px;
             padding: 15px;
             color: #000000;
@@ -230,7 +230,7 @@
             align-items: flex-end;
         }
         canvas {
-            border: 1px dashed #475569;
+            border: 1px dashed #000000;
             border-radius: 8px;
             background: #ffffff;
             touch-action: none;
@@ -288,7 +288,7 @@
         <!-- 核對與雙簽收主表單 -->
         <div class="sheet-container" id="captureArea">
             <div class="header">
-                <h1>饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 核對中 )</span></h1>
+                <h1 style="color: #dc2626;">饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 核對中 )</span></h1>
                 <div id="headerInfo" class="info-grid">
                     <div><strong>單號：</strong><span id="orderIdText">--</span></div>
                     <div><strong>日期：</strong><span id="orderDate">--/--/--</span></div>
@@ -568,7 +568,7 @@
             }
         });
 
-        // 🌟 革命性解決方案：建立獨立的「離線隱形渲染」圖像生成器
+        // 🌟 最終殺手鐧：暴力去除所有透明度並寫死深黑樣式
         function uploadDataAndDownloadScreenshot() {
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -583,29 +583,39 @@
                 });
             });
 
-            // 2. 建立完美的離線深黑純白 HTML 複製本（徹底斬斷網頁淡色與透明遮罩快取）
+            // 2. 複製節點並暴力洗清任何可能導致淡化的 opacity 與 color
             const targetElement = document.getElementById('captureArea');
             const clone = targetElement.cloneNode(true);
 
-            // 清理隱藏不必要的按鈕
+            // 移除所有按鈕
             clone.querySelectorAll('button').forEach(b => b.remove());
 
-            // 將輸入框轉為高清純黑文字
+            // 暴力將複製本內的所有元素強制設定 100% 不透明與純黑字體
+            const allNodes = clone.querySelectorAll('*');
+            allNodes.forEach(node => {
+                node.style.setProperty('opacity', '1', 'important');
+                node.style.setProperty('filter', 'none', 'important');
+                if (node.tagName !== 'H1' && !node.classList.contains('column-title')) {
+                    node.style.setProperty('color', '#000000', 'important');
+                }
+            });
+
+            // 將輸入框轉為深黑粗體字
             const originalInputs = targetElement.querySelectorAll('.qty-input');
             const cloneInputs = clone.querySelectorAll('.qty-input');
             originalInputs.forEach((input, index) => {
                 const val = input.value;
                 const parent = cloneInputs[index].parentNode;
-                parent.innerHTML = `<span style="color:#000000; font-weight:bold; font-size:15px;">${val}</span>`;
+                parent.innerHTML = `<span style="color:#000000 !important; font-weight:bold; font-size:15px; opacity:1 !important;">${val}</span>`;
             });
 
-            // 將 Canvas 筆跡完美轉化為高對比圖片
+            // 將 Canvas 簽名轉化為 100% 純黑高清圖檔，防變淡
             const originalCanvases = targetElement.querySelectorAll('canvas');
             const cloneCanvases = clone.querySelectorAll('canvas');
             originalCanvases.forEach((canvas, index) => {
                 const imgUrl = canvas.toDataURL('image/png');
                 const parent = cloneCanvases[index].parentNode;
-                parent.innerHTML = `<img src="${imgUrl}" style="width:100%; max-width:400px; background:#ffffff; border:1px solid #000000; border-radius:8px;">`;
+                parent.innerHTML = `<img src="${imgUrl}" style="width:100%; max-width:400px; background:#ffffff !important; border:2px solid #000000 !important; border-radius:8px; opacity:1 !important; filter: contrast(200%);">`;
             });
 
             // 包裹於離線容器中
@@ -613,14 +623,15 @@
             offscreenContainer.style.position = 'absolute';
             offscreenContainer.style.top = '-9999px';
             offscreenContainer.style.left = '-9999px';
-            offscreenContainer.style.width = '1000px'; // 固定的高清晰寬度
+            offscreenContainer.style.width = '1000px'; 
             offscreenContainer.style.backgroundColor = '#ffffff';
             offscreenContainer.style.color = '#000000';
             offscreenContainer.style.padding = '20px';
+            offscreenContainer.style.opacity = '1';
             offscreenContainer.appendChild(clone);
             document.body.appendChild(offscreenContainer);
 
-            // 3. 執行絕對純白的 2 倍高清截圖
+            // 3. 呼叫 html2canvas
             html2canvas(clone, {
                 scale: 2,
                 backgroundColor: "#ffffff",
@@ -637,10 +648,10 @@
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
 
-                // 銷毀離線容器
+                // 銷毀容器
                 document.body.removeChild(offscreenContainer);
 
-                // 4. 同步至 Google 試算表
+                // 4. 同步試算表
                 fetch(GAS_API_URL, {
                     method: "POST",
                     body: JSON.stringify({
