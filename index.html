@@ -526,7 +526,7 @@
             }
         });
 
-        // 🌟 革命性解決方案：直接用原生 Canvas 手動繪製白底黑字單據（100% 絕對清晰）
+        // 🌟 原生 Canvas 畫布渲染：繪製 100% 高清晰單據
         function generatePureCanvasPNG(arrivalTime, finalItems) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -534,11 +534,9 @@
             canvas.width = 1200;
             canvas.height = 1600;
 
-            // 1. 純白背景
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. 標題與單號資訊
             ctx.fillStyle = '#dc2626';
             ctx.font = 'bold 36px sans-serif';
             ctx.fillText('饗賓件數核對單 (已完成簽收)', 40, 60);
@@ -557,7 +555,6 @@
             ctx.fillText(`實際到貨時間: ${arrivalTime}`, 600, 120);
             ctx.fillText(`製表人員: ${currentTaskData.creator}`, 900, 120);
 
-            // 3. 畫項目表格
             let startY = 160;
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 22px sans-serif';
@@ -587,13 +584,11 @@
                 ctx.fillStyle = '#000000';
                 ctx.fillText(item.name, 60, startY + 24);
 
-                // 找預計數量
                 const expItem = loadedItemsForDraw.find(i => i.name === item.name);
                 const expQty = expItem ? expItem.expected_qty : item.actual_qty;
 
                 ctx.fillText(String(expQty), 730, startY + 24);
                 
-                // 實收數量特別加粗
                 ctx.font = 'bold 18px sans-serif';
                 ctx.fillText(String(item.actual_qty), 980, startY + 24);
                 ctx.font = '18px sans-serif';
@@ -601,7 +596,6 @@
                 startY += 36;
             });
 
-            // 4. 畫底部雙階段簽名
             startY += 40;
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 22px sans-serif';
@@ -614,11 +608,9 @@
             ctx.strokeRect(40, startY, 520, 180);
             ctx.strokeRect(620, startY, 520, 180);
 
-            // 貼上手寫簽名 canvas
             ctx.drawImage(driverSign.canvas, 50, startY + 10, 500, 160);
             ctx.drawImage(storeSign.canvas, 630, startY + 10, 500, 160);
 
-            // 裁切成適當高度的圖片
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = 1200;
             finalCanvas.height = startY + 220;
@@ -648,9 +640,10 @@
                 });
             });
 
-            // 🌟 直接用原生 Canvas 產出 100% 白底純黑高對比 PNG，徹底排除所有網頁截圖 bug
+            // 1. 產生 PNG 圖檔（ Base64 格式 ）
             const imgData = generatePureCanvasPNG(timeStr, finalItems);
 
+            // 2. 本地手機自動下載
             const downloadLink = document.createElement('a');
             downloadLink.href = imgData;
             downloadLink.download = `單號_${currentActiveOrderId}_簽收確認單.png`;
@@ -658,19 +651,20 @@
             downloadLink.click();
             document.body.removeChild(downloadLink);
 
-            // 同步試算表
+            // 3. 🌟 將圖檔數據 (image_base64) 傳給 GAS 自動上傳至 Google 雲端硬碟資料夾
             fetch(GAS_API_URL, {
                 method: "POST",
                 body: JSON.stringify({
                     order_id: currentActiveOrderId,
                     arrival_time: timeStr,
-                    items: finalItems
+                    items: finalItems,
+                    image_base64: imgData // 傳送 PNG Base64 圖檔
                 })
             })
             .then(res => res.json())
             .then(result => {
                 if (result.status === "success") {
-                    alert("🎉 簽收完成！實收數量已自動更新回試算表，且確認單簽單已成功下載儲存。");
+                    alert("🎉 簽收完成！實收數據已更新，且 PNG 簽單已成功自動備份至 Google 雲端硬碟資料夾！");
                     loadDriverTasks();
                 } else {
                     alert("試算表數據同步失敗：" + result.message);
@@ -690,7 +684,7 @@
                 document.getElementById('clearStoreBtn').style.display = 'none';
                 document.getElementById('lockStage2Btn').disabled = true;
                 document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
-                document.getElementById('lockStage2Btn').innerText = '資料同步與截圖產生中...';
+                document.getElementById('lockStage2Btn').innerText = '資料同步與雲端歸檔中...';
 
                 uploadDataAndDownloadScreenshot();
             }
