@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>饗賓集團冷鏈配送系統 - 司機任務台</title>
-    
-    <!-- 引入 html2canvas 截圖工具 -->
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <style>
         body {
@@ -21,7 +18,6 @@
             margin: 0 auto;
         }
         
-        /* 司機選擇與控制面板 */
         .control-panel {
             background: #fff;
             padding: 20px;
@@ -58,7 +54,6 @@
             cursor: pointer;
         }
 
-        /* 任務卡片清單 */
         .task-list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -78,13 +73,8 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
         }
-        .task-card.pending {
-            border-left-color: #eab308;
-        }
-        .task-card.completed {
-            border-left-color: #22c55e;
-            opacity: 0.85;
-        }
+        .task-card.pending { border-left-color: #eab308; }
+        .task-card.completed { border-left-color: #22c55e; opacity: 0.85; }
         .task-header {
             display: flex;
             justify-content: space-between;
@@ -110,7 +100,6 @@
             line-height: 1.5;
         }
 
-        /* 件數核對主單 */
         .sheet-container {
             background: #ffffff; 
             color: #000000;
@@ -133,17 +122,8 @@
             justify-content: space-between;
             align-items: center;
         }
-        .header h1 {
-            color: #dc2626;
-            margin: 0;
-            font-size: 22px;
-        }
-        .info-grid {
-            display: flex;
-            gap: 20px;
-            font-size: 13px;
-            color: #000000;
-        }
+        .header h1 { color: #dc2626; margin: 0; font-size: 22px; }
+        .info-grid { display: flex; gap: 20px; font-size: 13px; color: #000000; }
 
         .main-grid {
             display: grid;
@@ -157,10 +137,7 @@
             border-radius: 8px;
             padding: 10px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        table { width: 100%; border-collapse: collapse; }
         th, td {
             padding: 6px 8px;
             border-bottom: 1px solid #475569;
@@ -168,11 +145,7 @@
             font-size: 13px;
             color: #000000;
         }
-        th {
-            font-weight: bold;
-            color: #000000;
-            background-color: #f1f5f9;
-        }
+        th { font-weight: bold; color: #000000; background-color: #f1f5f9; }
         
         .column-title {
             font-size: 14px;
@@ -212,10 +185,7 @@
             padding: 15px;
             color: #000000;
         }
-        .signature-card.disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
+        .signature-card.disabled { opacity: 0.5; pointer-events: none; }
         .signature-header {
             display: flex;
             justify-content: space-between;
@@ -224,11 +194,7 @@
             font-weight: bold;
             font-size: 14px;
         }
-        .canvas-container {
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-        }
+        .canvas-container { display: flex; gap: 10px; align-items: flex-end; }
         canvas {
             border: 1px dashed #000000;
             border-radius: 8px;
@@ -260,17 +226,13 @@
         .btn-green { background-color: #16a34a; }
 
         @media (max-width: 900px) {
-            .main-grid, .bottom-section {
-                grid-template-columns: 1fr;
-            }
+            .main-grid, .bottom-section { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        
-        <!-- 頂部控制面板 -->
         <div class="control-panel">
             <label for="driverSelect">👤 司機選單：</label>
             <select id="driverSelect" class="driver-select" disabled>
@@ -279,13 +241,11 @@
             <button id="btnRefresh" class="btn-refresh">重整任務</button>
         </div>
 
-        <!-- 任務清單區域 -->
         <h3 style="margin-bottom: 10px; color: #475569;">📅 今日派送清單</h3>
         <div id="taskList" class="task-list">
             <div style="color: #94a3b8; font-style: italic;">請先在上方選擇司機姓名以載入今日任務...</div>
         </div>
 
-        <!-- 核對與雙簽收主表單 -->
         <div class="sheet-container" id="captureArea">
             <div class="header">
                 <h1 style="color: #dc2626;">饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 核對中 )</span></h1>
@@ -297,7 +257,6 @@
                 </div>
             </div>
 
-            <!-- 橫向三欄式大網格 -->
             <div class="main-grid">
                 <div class="column-box" id="col1">
                     <div class="column-title blue-title">1. 溫層與常態出貨項目</div>
@@ -324,7 +283,6 @@
                 </div>
             </div>
 
-            <!-- 底部雙階段簽章區 -->
             <div class="bottom-section">
                 <div class="signature-card" id="driverCard">
                     <div class="signature-header">
@@ -349,7 +307,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
@@ -359,6 +316,7 @@
 
         let currentActiveOrderId = "";
         let currentTasks = [];
+        let currentTaskData = {};
 
         function setupCanvas(canvasId, clearBtnId) {
             const canvas = document.getElementById(canvasId);
@@ -427,7 +385,6 @@
             const driver = document.getElementById('driverSelect').value;
             const listDiv = document.getElementById('taskList');
             const sheetForm = document.getElementById('captureArea');
-            
             sheetForm.style.display = "none";
 
             if (!driver) {
@@ -490,6 +447,7 @@
 
         function openOrderForm(task) {
             currentActiveOrderId = task.order_id;
+            currentTaskData = task;
             
             document.querySelector("#table1 tbody").innerHTML = "";
             document.querySelector("#table2 tbody").innerHTML = "";
@@ -568,13 +526,120 @@
             }
         });
 
-        // 🌟 最終殺手鐧：暴力去除所有透明度並寫死深黑樣式
+        // 🌟 革命性解決方案：直接用原生 Canvas 手動繪製白底黑字單據（100% 絕對清晰）
+        function generatePureCanvasPNG(arrivalTime, finalItems) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = 1200;
+            canvas.height = 1600;
+
+            // 1. 純白背景
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. 標題與單號資訊
+            ctx.fillStyle = '#dc2626';
+            ctx.font = 'bold 36px sans-serif';
+            ctx.fillText('饗賓件數核對單 (已完成簽收)', 40, 60);
+
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(40, 80);
+            ctx.lineTo(1160, 80);
+            ctx.stroke();
+
+            ctx.fillStyle = '#000000';
+            ctx.font = '20px sans-serif';
+            ctx.fillText(`單號: ${currentTaskData.order_id}`, 40, 120);
+            ctx.fillText(`日期: ${currentTaskData.date}`, 320, 120);
+            ctx.fillText(`實際到貨時間: ${arrivalTime}`, 600, 120);
+            ctx.fillText(`製表人員: ${currentTaskData.creator}`, 900, 120);
+
+            // 3. 畫項目表格
+            let startY = 160;
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.fillText('出貨與回收明細項目列表', 40, startY);
+
+            startY += 20;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(40, startY, 1120, 40);
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(41, startY + 1, 1118, 38);
+
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 18px sans-serif';
+            ctx.fillText('項目名稱', 60, startY + 26);
+            ctx.fillText('預計數量', 700, startY + 26);
+            ctx.fillText('實收數量', 950, startY + 26);
+
+            startY += 40;
+            ctx.font = '18px sans-serif';
+            
+            finalItems.forEach((item, idx) => {
+                ctx.strokeStyle = '#cccccc';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(40, startY, 1120, 36);
+
+                ctx.fillStyle = '#000000';
+                ctx.fillText(item.name, 60, startY + 24);
+
+                // 找預計數量
+                const expItem = loadedItemsForDraw.find(i => i.name === item.name);
+                const expQty = expItem ? expItem.expected_qty : item.actual_qty;
+
+                ctx.fillText(String(expQty), 730, startY + 24);
+                
+                // 實收數量特別加粗
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText(String(item.actual_qty), 980, startY + 24);
+                ctx.font = '18px sans-serif';
+
+                startY += 36;
+            });
+
+            // 4. 畫底部雙階段簽名
+            startY += 40;
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.fillText('第一階段：司機點收簽章', 40, startY);
+            ctx.fillText('第二階段：分店簽收簽章', 620, startY);
+
+            startY += 15;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(40, startY, 520, 180);
+            ctx.strokeRect(620, startY, 520, 180);
+
+            // 貼上手寫簽名 canvas
+            ctx.drawImage(driverSign.canvas, 50, startY + 10, 500, 160);
+            ctx.drawImage(storeSign.canvas, 630, startY + 10, 500, 160);
+
+            // 裁切成適當高度的圖片
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = 1200;
+            finalCanvas.height = startY + 220;
+            const finalCtx = finalCanvas.getContext('2d');
+            finalCtx.drawImage(canvas, 0, 0);
+
+            return finalCanvas.toDataURL('image/png');
+        }
+
+        let loadedItemsForDraw = [];
+        const originalRenderItems = renderItems;
+        renderItems = function(items) {
+            loadedItemsForDraw = items;
+            originalRenderItems(items);
+        };
+
         function uploadDataAndDownloadScreenshot() {
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             document.getElementById('arrivalTime').innerText = timeStr;
 
-            // 1. 收集數據
             const finalItems = [];
             document.querySelectorAll(".qty-input").forEach(input => {
                 finalItems.push({
@@ -583,100 +648,37 @@
                 });
             });
 
-            // 2. 複製節點並暴力洗清任何可能導致淡化的 opacity 與 color
-            const targetElement = document.getElementById('captureArea');
-            const clone = targetElement.cloneNode(true);
+            // 🌟 直接用原生 Canvas 產出 100% 白底純黑高對比 PNG，徹底排除所有網頁截圖 bug
+            const imgData = generatePureCanvasPNG(timeStr, finalItems);
 
-            // 移除所有按鈕
-            clone.querySelectorAll('button').forEach(b => b.remove());
+            const downloadLink = document.createElement('a');
+            downloadLink.href = imgData;
+            downloadLink.download = `單號_${currentActiveOrderId}_簽收確認單.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
 
-            // 暴力將複製本內的所有元素強制設定 100% 不透明與純黑字體
-            const allNodes = clone.querySelectorAll('*');
-            allNodes.forEach(node => {
-                node.style.setProperty('opacity', '1', 'important');
-                node.style.setProperty('filter', 'none', 'important');
-                if (node.tagName !== 'H1' && !node.classList.contains('column-title')) {
-                    node.style.setProperty('color', '#000000', 'important');
-                }
-            });
-
-            // 將輸入框轉為深黑粗體字
-            const originalInputs = targetElement.querySelectorAll('.qty-input');
-            const cloneInputs = clone.querySelectorAll('.qty-input');
-            originalInputs.forEach((input, index) => {
-                const val = input.value;
-                const parent = cloneInputs[index].parentNode;
-                parent.innerHTML = `<span style="color:#000000 !important; font-weight:bold; font-size:15px; opacity:1 !important;">${val}</span>`;
-            });
-
-            // 將 Canvas 簽名轉化為 100% 純黑高清圖檔，防變淡
-            const originalCanvases = targetElement.querySelectorAll('canvas');
-            const cloneCanvases = clone.querySelectorAll('canvas');
-            originalCanvases.forEach((canvas, index) => {
-                const imgUrl = canvas.toDataURL('image/png');
-                const parent = cloneCanvases[index].parentNode;
-                parent.innerHTML = `<img src="${imgUrl}" style="width:100%; max-width:400px; background:#ffffff !important; border:2px solid #000000 !important; border-radius:8px; opacity:1 !important; filter: contrast(200%);">`;
-            });
-
-            // 包裹於離線容器中
-            const offscreenContainer = document.createElement('div');
-            offscreenContainer.style.position = 'absolute';
-            offscreenContainer.style.top = '-9999px';
-            offscreenContainer.style.left = '-9999px';
-            offscreenContainer.style.width = '1000px'; 
-            offscreenContainer.style.backgroundColor = '#ffffff';
-            offscreenContainer.style.color = '#000000';
-            offscreenContainer.style.padding = '20px';
-            offscreenContainer.style.opacity = '1';
-            offscreenContainer.appendChild(clone);
-            document.body.appendChild(offscreenContainer);
-
-            // 3. 呼叫 html2canvas
-            html2canvas(clone, {
-                scale: 2,
-                backgroundColor: "#ffffff",
-                useCORS: true,
-                logging: false
-            }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                
-                // 下載圖片
-                const downloadLink = document.createElement('a');
-                downloadLink.href = imgData;
-                downloadLink.download = `單號_${currentActiveOrderId}_簽收確認單.png`;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-
-                // 銷毀容器
-                document.body.removeChild(offscreenContainer);
-
-                // 4. 同步試算表
-                fetch(GAS_API_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        order_id: currentActiveOrderId,
-                        arrival_time: timeStr,
-                        items: finalItems
-                    })
+            // 同步試算表
+            fetch(GAS_API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    order_id: currentActiveOrderId,
+                    arrival_time: timeStr,
+                    items: finalItems
                 })
-                .then(res => res.json())
-                .then(result => {
-                    if (result.status === "success") {
-                        alert("🎉 簽收完成！實收數量已自動更新回試算表，且確認單截圖已成功下載儲存。");
-                        loadDriverTasks();
-                    } else {
-                        alert("試算表數據同步失敗：" + result.message);
-                        restoreButtons();
-                    }
-                })
-                .catch(err => {
-                    alert("連線 GAS 伺服器失敗，請檢查網路！");
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "success") {
+                    alert("🎉 簽收完成！實收數量已自動更新回試算表，且確認單簽單已成功下載儲存。");
+                    loadDriverTasks();
+                } else {
+                    alert("試算表數據同步失敗：" + result.message);
                     restoreButtons();
-                });
-            }).catch(err => {
-                console.error("截圖產生錯誤:", err);
-                document.body.removeChild(offscreenContainer);
+                }
+            })
+            .catch(err => {
+                alert("連線 GAS 伺服器失敗，請檢查網路！");
                 restoreButtons();
             });
         }
