@@ -79,10 +79,10 @@
             box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
         }
         .task-card.pending {
-            border-left-color: #eab308; /* 黃色：待簽收 */
+            border-left-color: #eab308;
         }
         .task-card.completed {
-            border-left-color: #22c55e; /* 綠色：已簽收 */
+            border-left-color: #22c55e;
             opacity: 0.85;
         }
         .task-header {
@@ -110,14 +110,14 @@
             line-height: 1.5;
         }
 
-        /* 件數核對主單 - 為了保證截圖背景，強制不透明白底與深色文字 */
+        /* 件數核對主單 */
         .sheet-container {
-            background: #ffffff !important; 
-            color: #000000 !important;
+            background: #ffffff; 
+            color: #000000;
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            display: none; /* 預設隱藏 */
+            display: none;
             animation: fadeIn 0.3s ease-in-out;
         }
         @keyframes fadeIn {
@@ -134,7 +134,7 @@
             align-items: center;
         }
         .header h1 {
-            color: #dc2626 !important;
+            color: #dc2626;
             margin: 0;
             font-size: 22px;
         }
@@ -142,7 +142,7 @@
             display: flex;
             gap: 20px;
             font-size: 13px;
-            color: #000000 !important; /* 強制頂部單號資訊變黑 */
+            color: #000000;
         }
 
         .main-grid {
@@ -153,7 +153,7 @@
         }
         .column-box {
             background-color: #ffffff;
-            border: 1px solid #94a3b8; /* 加深外框線 */
+            border: 1px solid #64748b;
             border-radius: 8px;
             padding: 10px;
         }
@@ -163,14 +163,14 @@
         }
         th, td {
             padding: 6px 8px;
-            border-bottom: 1px solid #cbd5e1; /* 加深內網格線 */
+            border-bottom: 1px solid #cbd5e1;
             text-align: left;
             font-size: 13px;
-            color: #000000 !important; /* 強制文字純黑 */
+            color: #000000;
         }
         th {
             font-weight: bold;
-            color: #000000 !important;
+            color: #000000;
             background-color: #f1f5f9;
         }
         
@@ -190,31 +190,27 @@
             padding: 4px;
             font-size: 13px;
             text-align: center;
-            border: 1px solid #475569; /* 加深輸入框格線 */
+            border: 1px solid #334155;
             border-radius: 4px;
-            color: #000000 !important; /* 強制輸入數字變極黑 */
+            color: #000000;
             font-weight: bold;
             background-color: #ffffff;
-        }
-        .qty-input:focus {
-            outline: none;
-            border-color: #3b82f6;
         }
 
         .bottom-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            border-top: 2px solid #94a3b8;
+            border-top: 2px solid #64748b;
             padding-top: 20px;
             margin-top: 15px;
         }
         .signature-card {
             background-color: #ffffff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #64748b;
             border-radius: 10px;
             padding: 15px;
-            color: #000000 !important;
+            color: #000000;
         }
         .signature-card.disabled {
             opacity: 0.5;
@@ -261,9 +257,7 @@
             transition: 0.2s;
         }
         .btn-blue { background-color: #2563eb; }
-        .btn-blue:hover { background-color: #1d4ed8; }
         .btn-green { background-color: #16a34a; }
-        .btn-green:hover { background-color: #15803d; }
 
         @media (max-width: 900px) {
             .main-grid, .bottom-section {
@@ -291,10 +285,10 @@
             <div style="color: #94a3b8; font-style: italic;">請先在上方選擇司機姓名以載入今日任務...</div>
         </div>
 
-        <!-- 核對與雙簽收主表單 (點選卡片才展開) -->
+        <!-- 核對與雙簽收主表單 -->
         <div class="sheet-container" id="captureArea">
             <div class="header">
-                <h1 style="color: #dc2626 !important;">饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626 !important; font-weight: normal;">( 核對中 )</span></h1>
+                <h1>饗賓件數核對單 <span id="flowStatus" style="font-size: 14px; margin-left: 10px; color: #dc2626; font-weight: normal;">( 核對中 )</span></h1>
                 <div id="headerInfo" class="info-grid">
                     <div><strong>單號：</strong><span id="orderIdText">--</span></div>
                     <div><strong>日期：</strong><span id="orderDate">--/--/--</span></div>
@@ -366,7 +360,6 @@
         let currentActiveOrderId = "";
         let currentTasks = [];
 
-        // 初始化手寫板
         function setupCanvas(canvasId, clearBtnId) {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext('2d');
@@ -384,8 +377,8 @@
                 if (!isDrawing) return;
                 e.preventDefault();
                 const pos = getPos(e);
-                ctx.lineWidth = 4;           // 🌟 手寫筆跡線條加粗，保證截圖清晰
-                ctx.strokeStyle = '#000000'; // 🌟 筆跡強制為純黑，不再使用灰色
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#000000';
                 ctx.lineTo(pos.x, pos.y);
                 ctx.stroke();
                 ctx.beginPath();
@@ -407,7 +400,6 @@
         const driverSign = setupCanvas('driverCanvas', 'clearDriverBtn');
         const storeSign = setupCanvas('storeCanvas', 'clearStoreBtn');
 
-        // 🟢 動態載入司機名單
         function loadDrivers() {
             fetch(`${GAS_API_URL}?action=get_drivers`)
             .then(res => res.json())
@@ -431,7 +423,6 @@
             });
         }
 
-        // 🟢 讀取該司機的「今日任務列表」
         function loadDriverTasks() {
             const driver = document.getElementById('driverSelect').value;
             const listDiv = document.getElementById('taskList');
@@ -461,7 +452,6 @@
             });
         }
 
-        // 渲染任務卡片
         function renderTaskList(tasks) {
             const listDiv = document.getElementById('taskList');
             if (tasks.length === 0) {
@@ -498,7 +488,6 @@
             });
         }
 
-        // 🟢 點選卡片：即時載入預計件數
         function openOrderForm(task) {
             currentActiveOrderId = task.order_id;
             
@@ -531,7 +520,6 @@
             });
         }
 
-        // 智慧型自動防呆分類
         function renderItems(items) {
             const t1 = document.querySelector("#table1 tbody");
             const t2 = document.querySelector("#table2 tbody");
@@ -558,21 +546,17 @@
             });
         }
 
-        // 第一階段鎖定
         document.getElementById('lockStage1Btn').addEventListener('click', () => {
             if (confirm("確認第一階段：數量核對無誤且司機已簽名？")) {
-                // 🌟 改進點：使用 readOnly 而不使用 disabled。
-                // 這樣瀏覽器就不會強行把字體抹白/變灰，能保持高強度的深黑字體！
                 document.querySelectorAll('.qty-input').forEach(input => {
                     input.readOnly = true;
-                    input.style.backgroundColor = '#f8fafc';
+                    input.style.backgroundColor = '#ffffff';
                     input.style.color = '#000000';
                     input.style.fontWeight = 'bold';
-                    input.style.border = '1px solid #94a3b8';
                 });
                 
                 driverSign.canvas.style.pointerEvents = 'none';
-                driverSign.canvas.style.backgroundColor = '#f8fafc';
+                driverSign.canvas.style.backgroundColor = '#ffffff';
                 document.getElementById('clearDriverBtn').style.display = 'none';
                 document.getElementById('lockStage1Btn').style.display = 'none';
 
@@ -584,19 +568,13 @@
             }
         });
 
-        // 🌟 核心雙保險：更新試算表數據 + 網頁端自動下載 100% 高對比深黑白底簽單
+        // 🌟 革命性解決方案：建立獨立的「離線隱形渲染」圖像生成器
         function uploadDataAndDownloadScreenshot() {
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             document.getElementById('arrivalTime').innerText = timeStr;
 
-            // 暫時隱藏按鈕以保證截圖完美美觀
-            document.getElementById('clearDriverBtn').style.display = 'none';
-            document.getElementById('clearStoreBtn').style.display = 'none';
-            document.getElementById('lockStage1Btn').style.display = 'none';
-            document.getElementById('lockStage2Btn').style.display = 'none';
-
-            // 1. 收集實收數量
+            // 1. 收集數據
             const finalItems = [];
             document.querySelectorAll(".qty-input").forEach(input => {
                 finalItems.push({
@@ -605,16 +583,53 @@
                 });
             });
 
-            // 2. 呼叫 html2canvas 執行高對比純白底截圖
-            html2canvas(document.getElementById('captureArea'), {
-                scale: 2.2,                 // 再拉高解析度，確保字體絕不模糊
+            // 2. 建立完美的離線深黑純白 HTML 複製本（徹底斬斷網頁淡色與透明遮罩快取）
+            const targetElement = document.getElementById('captureArea');
+            const clone = targetElement.cloneNode(true);
+
+            // 清理隱藏不必要的按鈕
+            clone.querySelectorAll('button').forEach(b => b.remove());
+
+            // 將輸入框轉為高清純黑文字
+            const originalInputs = targetElement.querySelectorAll('.qty-input');
+            const cloneInputs = clone.querySelectorAll('.qty-input');
+            originalInputs.forEach((input, index) => {
+                const val = input.value;
+                const parent = cloneInputs[index].parentNode;
+                parent.innerHTML = `<span style="color:#000000; font-weight:bold; font-size:15px;">${val}</span>`;
+            });
+
+            // 將 Canvas 筆跡完美轉化為高對比圖片
+            const originalCanvases = targetElement.querySelectorAll('canvas');
+            const cloneCanvases = clone.querySelectorAll('canvas');
+            originalCanvases.forEach((canvas, index) => {
+                const imgUrl = canvas.toDataURL('image/png');
+                const parent = cloneCanvases[index].parentNode;
+                parent.innerHTML = `<img src="${imgUrl}" style="width:100%; max-width:400px; background:#ffffff; border:1px solid #000000; border-radius:8px;">`;
+            });
+
+            // 包裹於離線容器中
+            const offscreenContainer = document.createElement('div');
+            offscreenContainer.style.position = 'absolute';
+            offscreenContainer.style.top = '-9999px';
+            offscreenContainer.style.left = '-9999px';
+            offscreenContainer.style.width = '1000px'; // 固定的高清晰寬度
+            offscreenContainer.style.backgroundColor = '#ffffff';
+            offscreenContainer.style.color = '#000000';
+            offscreenContainer.style.padding = '20px';
+            offscreenContainer.appendChild(clone);
+            document.body.appendChild(offscreenContainer);
+
+            // 3. 執行絕對純白的 2 倍高清截圖
+            html2canvas(clone, {
+                scale: 2,
+                backgroundColor: "#ffffff",
                 useCORS: true,
-                backgroundColor: "#ffffff", // 強制渲染底色為 100% 純白色
                 logging: false
             }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 
-                // 產生下載行為
+                // 下載圖片
                 const downloadLink = document.createElement('a');
                 downloadLink.href = imgData;
                 downloadLink.download = `單號_${currentActiveOrderId}_簽收確認單.png`;
@@ -622,7 +637,10 @@
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
 
-                // 3. 下載完成後，將數據同步傳回 Google 試算表
+                // 銷毀離線容器
+                document.body.removeChild(offscreenContainer);
+
+                // 4. 同步至 Google 試算表
                 fetch(GAS_API_URL, {
                     method: "POST",
                     body: JSON.stringify({
@@ -635,27 +653,27 @@
                 .then(result => {
                     if (result.status === "success") {
                         alert("🎉 簽收完成！實收數量已自動更新回試算表，且確認單截圖已成功下載儲存。");
-                        loadDriverTasks(); // 重新整理任務卡片
+                        loadDriverTasks();
                     } else {
-                        alert("試算表數據同步失敗：" + result.message + "\n（但您的簽名確認單截圖已經下載成功！）");
+                        alert("試算表數據同步失敗：" + result.message);
                         restoreButtons();
                     }
                 })
                 .catch(err => {
-                    alert("連線 GAS 伺服器失敗，請檢查網路！\n（但您的簽名確認單截圖已經下載成功！）");
+                    alert("連線 GAS 伺服器失敗，請檢查網路！");
                     restoreButtons();
                 });
             }).catch(err => {
                 console.error("截圖產生錯誤:", err);
+                document.body.removeChild(offscreenContainer);
                 restoreButtons();
             });
         }
 
-        // 第二階段正式提交
         document.getElementById('lockStage2Btn').addEventListener('click', () => {
             if (confirm("確認核對無誤？系統將同步實收數據回試算表，並自動下載本簽章單截圖。")) {
                 storeSign.canvas.style.pointerEvents = 'none';
-                storeSign.canvas.style.backgroundColor = '#f8fafc';
+                storeSign.canvas.style.backgroundColor = '#ffffff';
                 document.getElementById('clearStoreBtn').style.display = 'none';
                 document.getElementById('lockStage2Btn').disabled = true;
                 document.getElementById('lockStage2Btn').style.backgroundColor = '#9ca3af';
@@ -693,12 +711,10 @@
             document.getElementById('lockStage2Btn').innerText = "確認核對並完成簽收（正式鎖檔）";
         }
 
-        // 🟢 網頁啟動時：動態去試算表載入司機名單
         window.addEventListener('DOMContentLoaded', () => {
             loadDrivers();
         });
 
-        // 綁定事件
         document.getElementById('driverSelect').addEventListener('change', loadDriverTasks);
         document.getElementById('btnRefresh').addEventListener('click', loadDriverTasks);
     </script>
